@@ -1,10 +1,10 @@
 package com.sergiocruz.nanogram
 
-
 import android.Manifest.permission.READ_CONTACTS
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.os.AsyncTask
@@ -14,40 +14,42 @@ import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.webkit.WebView
 import android.widget.ArrayAdapter
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.google.android.material.snackbar.Snackbar
+import com.sergiocruz.nanogram.service.getInstagramUrl
+import com.sergiocruz.nanogram.ui.main.AutenticationWebViewClient
 import com.sergiocruz.nanogram.viewmodel.ContactsViewModel
 import kotlinx.android.synthetic.main.activity_login.*
 
 
-/**
- * A login screen that offers login via email/password.
- */
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : AppCompatActivity(), AutenticationWebViewClient.OnTokenReceived {
 
+    lateinit var redirectUri: String
+    lateinit var INSTAGRAM_URL: String
 
     /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
+     * Keep track of the login task to ensure we can cancel it if requested.*/
     private var mAuthTask: UserLoginTask? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        val redirectUri =
-            getString(R.string.scheme) + getString(R.string.host) + getString(R.string.pathPrefix)
-        val INSTAGRAM_URL =
-            getString(R.string.insta_api_uri_base) +
-                    "client_id=${BuildConfig.ClientId}&" +
-                    "redirect_uri=$redirectUri&" +
-                    "response_type=code"
+        redirectUri = getString(R.string.scheme) + getString(R.string.host) +
+                getString(R.string.pathPrefix)
+        INSTAGRAM_URL = getString(R.string.insta_api_uri_base) +
+                "client_id=${BuildConfig.ClientId}&" +
+                "redirect_uri=$redirectUri&" +
+                "response_type=code"
 
         if (!allPermissionsGranted()) {
             getRuntimePermissions()
@@ -174,9 +176,7 @@ class LoginActivity : AppCompatActivity() {
      * errors are presented and no actual login attempt is made.
      */
     private fun attemptLogin() {
-        if (mAuthTask != null) {
-            return
-        }
+        if (mAuthTask != null) return
 
         // Reset errors.
         email.error = null
@@ -215,10 +215,39 @@ class LoginActivity : AppCompatActivity() {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true)
-            mAuthTask = UserLoginTask(emailStr, passwordStr)
-            mAuthTask!!.execute(null as Void?)
+//            mAuthTask = UserLoginTask(emailStr, passwordStr)
+//            mAuthTask!!.execute(null as Void?)
+
+            loadWebView()
+
         }
     }
+
+    private fun getlAuthWebView(): WebView {
+        val webView = WebView(this)
+        webView.isVerticalScrollBarEnabled = false
+        webView.isHorizontalScrollBarEnabled = false
+        webView.webViewClient = AutenticationWebViewClient(this)
+        webView.settings.javaScriptEnabled = true
+        webView.loadUrl(getInstagramUrl(this))
+        return webView
+    }
+
+    private lateinit var alertDialog: AlertDialog
+
+    private fun loadWebView() {
+        alertDialog = AlertDialog.Builder(this)
+            .setView(getlAuthWebView())
+            .create();
+        alertDialog.show()
+    }
+
+    override fun onTokenReceived(token: String) {
+        Toast.makeText(this, "Tokken is $token", Toast.LENGTH_LONG).show()
+        alertDialog.dismiss()
+        showProgress(false)
+    }
+
 
     private fun isEmailValid(email: String): Boolean {
         // TODO: improve verification?
@@ -322,7 +351,8 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun enterApp() {
-
+        val intent = Intent(this@LoginActivity, MainActivity::class.java)
+        startActivity(intent)
     }
 
     companion object {
