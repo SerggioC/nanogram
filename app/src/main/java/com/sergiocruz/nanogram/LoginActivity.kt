@@ -25,10 +25,16 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.google.android.material.snackbar.Snackbar
+import com.sergiocruz.nanogram.model.Token
+import com.sergiocruz.nanogram.retrofit.InstagramApiControler
 import com.sergiocruz.nanogram.service.getInstagramUrl
+import com.sergiocruz.nanogram.service.getRedirectUri
 import com.sergiocruz.nanogram.ui.main.AutenticationWebViewClient
 import com.sergiocruz.nanogram.viewmodel.ContactsViewModel
 import kotlinx.android.synthetic.main.activity_login.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 
 class LoginActivity : AppCompatActivity(), AutenticationWebViewClient.OnTokenReceived {
@@ -246,6 +252,30 @@ class LoginActivity : AppCompatActivity(), AutenticationWebViewClient.OnTokenRec
         Toast.makeText(this, "Tokken is $token", Toast.LENGTH_LONG).show()
         alertDialog.dismiss()
         showProgress(false)
+
+        var controler = InstagramApiControler().apiController
+        controler?.getAcessCode(
+            BuildConfig.ClientId,
+            BuildConfig.ClientSecret,
+            "authorization_code",
+            getRedirectUri(this),
+            token
+        )?.enqueue(object : Callback<Token> {
+            override fun onResponse(call: Call<Token>, response: Response<Token>) {
+                if (response.isSuccessful) {
+                    Log.i("response token= ", response.body()?.token)
+                } else {
+                    Log.i("Wrong response= ", call.toString() + " " + response.errorBody())
+
+                }
+            }
+
+            override fun onFailure(call: Call<Token>, t: Throwable) {
+                Log.i("fail on api call", call.toString())
+            }
+
+        })
+
     }
 
 

@@ -12,19 +12,19 @@ class OkHttpClientInterceptor : OkHttpClient() {
         return super.networkInterceptors()
     }
 }
-
-@Throws(IOException::class)
-fun intercept(chain: Interceptor.Chain): Response {
-    val originalRequest = chain.request()
-// Nothing to add to intercepted request if:
-    // a) Authorization value is empty because user is not logged in yet
-    // b) There is already a header with updated Authorization value
-    if (authorizationTokenIsEmpty() || alreadyHasAuthorizationHeader(originalRequest)) {
-        return chain.proceed(originalRequest);
-    }
-    // Add authorization header with updated authorization value to intercepted request
-    val authorisedRequest = originalRequest.newBuilder()
-        .header(AUTHORIZATION, accessToken)
-        .build()
-    return chain.proceed(authorisedRequest)
-}
+//
+//@Throws(IOException::class)
+//fun intercept(chain: Interceptor.Chain): Response {
+//    val originalRequest = chain.request()
+//// Nothing to add to intercepted request if:
+//    // a) Authorization value is empty because user is not logged in yet
+//    // b) There is already a header with updated Authorization value
+//    if (authorizationTokenIsEmpty() || alreadyHasAuthorizationHeader(originalRequest)) {
+//        return chain.proceed(originalRequest);
+//    }
+//    // Add authorization header with updated authorization value to intercepted request
+//    val authorisedRequest = originalRequest.newBuilder()
+//        .header(AUTHORIZATION, accessToken)
+//        .build()
+//    return chain.proceed(authorisedRequest)
+//}

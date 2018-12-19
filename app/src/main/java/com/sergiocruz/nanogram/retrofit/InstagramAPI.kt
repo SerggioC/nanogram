@@ -1,9 +1,9 @@
 package com.sergiocruz.nanogram.retrofit
 
+import com.sergiocruz.nanogram.model.Token
 import com.sergiocruz.nanogram.model.endpoint.comments.InstagramApiResponseComments
 import com.sergiocruz.nanogram.model.endpoint.media.InstagramApiResponseMedia
 import com.sergiocruz.nanogram.model.endpoint.media.userself.InstagramApiResponseSelf
-import com.sergiocruz.nanogram.model.endpoint.media.InstagramMediaData
 import retrofit2.Call
 import retrofit2.http.*
 
@@ -34,14 +34,22 @@ const val commentsUrl =
 
 interface InstagramAPI {
 
-    @POST("/posts")
+    /**
+     * client_id: your client id
+     * client_secret: your client secret
+     * grant_type: authorization_code is currently the only supported value
+     * redirect_uri: the redirect_uri you used in the authorization request. Note: this has to be the same value as in the authorization request.
+     * code: the exact code you received during the authorization step.
+     */
+    @POST("https://api.instagram.com/oauth/access_token")
     @FormUrlEncoded
-    fun savePost(
-        @Field("title") title: String,
-        @Field("body") body: String,
-        @Field("userId") userId: Long
-    ): Call<InstagramMediaData>
-
+    fun getAcessCode(
+        @Field("client_id") clientId: String,
+        @Field("client_secret") clientSecret: String,
+        @Field("grant_type") grantType: String,
+        @Field("redirect_uri") redirectUri: String,
+        @Field("code") code: String
+    ): Call<Token>
 
     @GET("{root}users/self/?access_token={token}")
     fun getUserInfo(@Path("root") root: String, @Path("token") token: String): Call<InstagramApiResponseSelf>
