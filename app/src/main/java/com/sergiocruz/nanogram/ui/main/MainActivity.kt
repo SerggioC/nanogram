@@ -1,8 +1,8 @@
-package com.sergiocruz.nanogram
+package com.sergiocruz.nanogram.ui.main
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.sergiocruz.nanogram.ui.main.MainFragment
+import com.sergiocruz.nanogram.R
 
 class MainActivity : AppCompatActivity() {
 

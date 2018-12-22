@@ -1,10 +1,12 @@
-package com.sergiocruz.nanogram.model.endpoint.userself
+package com.sergiocruz.nanogram.model.endpoint.usermedia
 
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 
-data class InstagramApiResponseSelf(
+class ApiResponseMedia {
+
     @SerializedName("data")
     @Expose
-    var data: SelfData? = null
-)
+    var data: List<InstagramMediaData>? = null
+
+}

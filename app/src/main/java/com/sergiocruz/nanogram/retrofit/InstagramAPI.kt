@@ -2,14 +2,14 @@ package com.sergiocruz.nanogram.retrofit
 
 import com.sergiocruz.nanogram.model.Token
 import com.sergiocruz.nanogram.model.endpoint.comments.InstagramApiResponseComments
-import com.sergiocruz.nanogram.model.endpoint.media.InstagramApiResponseMedia
-import com.sergiocruz.nanogram.model.endpoint.media.userself.InstagramApiResponseSelf
+import com.sergiocruz.nanogram.model.endpoint.usermedia.ApiResponseMedia
+import com.sergiocruz.nanogram.model.endpoint.userself.InstagramApiResponseSelf
 import retrofit2.Call
 import retrofit2.http.*
 
 /**
  * Instagram API root URL*/
-val ROOT_URL = "https://api.instagram.com/v1/"
+const val API_ROOT_URL = "https://api.instagram.com/v1/"
 
 /**
  * GET /users/selfGet information about the owner of the access token.
@@ -51,14 +51,29 @@ interface InstagramAPI {
         @Field("code") code: String
     ): Call<Token>
 
-    @GET("{root}users/self/?access_token={token}")
-    fun getUserInfo(@Path("root") root: String, @Path("token") token: String): Call<InstagramApiResponseSelf>
+    @GET("{api_root_url}users/self/?access_token={token}")
+    fun getUserInfo(
+        @Path("api_root_url") root: String,
+        @Path("token") token: String
+    ): Call<InstagramApiResponseSelf>
 
-    @GET("{root}users/self/media/recent/?access_token={token}")
-    fun getUserMedia(@Path("root") root: String, @Path("token") token: String): Call<InstagramApiResponseMedia>
+    @GET("{api_root_url}users/self/media/recent/")
+    fun getUserMedia1(
+        @Path("api_root_url") root: String,
+        @Query("access_token") token: String
+    ): Call<ApiResponseMedia>
 
-    @GET("{root}media/{media-id}/comments?access_token={token}")
-    fun getCommentsForMediaId(@Path("root") root: String, @Path("media-id") mediaId: String, @Path("token") token: String): Call<InstagramApiResponseComments>
+    @GET("https://api.instagram.com/v1/users/self/media/recent/")
+    fun getUserMedia(
+        @Query("access_token") token: String
+    ): Call<ApiResponseMedia>
+
+    @GET("{api_root_url}media/{media-id}/comments")
+    fun getCommentsForMediaId(
+        @Path("api_root_url") root: String,
+        @Path("media-id") mediaId: String,
+        @Query("access_token") token: String
+    ): Call<InstagramApiResponseComments>
 
 
 }

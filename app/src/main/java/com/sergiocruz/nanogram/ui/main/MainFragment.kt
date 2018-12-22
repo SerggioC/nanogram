@@ -1,12 +1,17 @@
 package com.sergiocruz.nanogram.ui.main
 
-import androidx.lifecycle.ViewModelProviders
+import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.GridLayoutManager
 import com.sergiocruz.nanogram.R
+import com.sergiocruz.nanogram.util.hasSavedToken
 
 class MainFragment : Fragment() {
 
@@ -25,8 +30,28 @@ class MainFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+
+
+        GridLayoutManager
+
         viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
-        // TODO: Use the ViewModel
+
+        if (hasSavedToken(this.context!!)) {
+            viewModel.getUserMedia(this.context!!).observe(this, Observer {
+                Log.i("Sergio> ", "it: $it")
+                var response = it.data
+
+            })
+        } else {
+            goToLoginActivity()
+        }
+
+    }
+
+    private fun goToLoginActivity() {
+        activity?.finish()
+        val intent = Intent(activity, MainActivity::class.java)
+        startActivity(intent)
     }
 
 }

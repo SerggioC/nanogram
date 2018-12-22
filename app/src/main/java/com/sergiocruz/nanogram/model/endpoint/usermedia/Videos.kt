@@ -3,52 +3,52 @@ package com.sergiocruz.nanogram.model.endpoint.usermedia
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 
-class Videos {
+data class Videos(
 
     @SerializedName("low_resolution")
     @Expose
-    var lowResolution: LowResolution? = null
+    var lowResolution: Resolution? = null,
     @SerializedName("standard_resolution")
     @Expose
-    var standardResolution: StandardResolution? = null
+    var standardResolution: Resolution? = null,
     @SerializedName("comments")
     @Expose
-    var comments: Comments? = null
+    var comments: Comments? = null,
     @SerializedName("caption")
     @Expose
-    var caption: Any? = null
+    var caption: Any? = null,
     @SerializedName("likes")
     @Expose
-    var likes: Likes? = null
+    var likes: Likes? = null,
     @SerializedName("link")
     @Expose
-    var link: String? = null
+    var link: String? = null,
     @SerializedName("created_time")
     @Expose
-    var createdTime: String? = null
+    var createdTime: String? = null,
     @SerializedName("images")
     @Expose
-    private var images: Images? = null
+    private var images: Images? = null,
     @SerializedName("type")
     @Expose
-    var type: String? = null
+    var type: String? = null,
     @SerializedName("users_in_photo")
     @Expose
-    var usersInPhoto: Any? = null
+    var usersInPhoto: Any? = null,
     @SerializedName("filter")
     @Expose
-    var filter: String? = null
+    var filter: String? = null,
     @SerializedName("tags")
     @Expose
-    var tags: List<Any>? = null
+    var tags: List<Any>? = null,
     @SerializedName("id")
     @Expose
-    var id: String? = null
+    var id: String? = null,
     @SerializedName("user")
     @Expose
-    var user: User? = null
+    var user: User? = null,
     @SerializedName("location")
     @Expose
     var location: Any? = null
 
-}
+)

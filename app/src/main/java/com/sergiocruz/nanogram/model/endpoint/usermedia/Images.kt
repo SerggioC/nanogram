@@ -3,16 +3,16 @@ package com.sergiocruz.nanogram.model.endpoint.usermedia
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 
-class Images {
+data class Images(
 
     @SerializedName("low_resolution")
     @Expose
-    var lowResolution: LowResolution? = null
+    var lowResolution: Resolution? = null,
     @SerializedName("thumbnail")
     @Expose
-    var thumbnail: Thumbnail? = null
+    var thumbnail: Resolution? = null,
     @SerializedName("standard_resolution")
     @Expose
-    var standardResolution: StandardResolution? = null
+    var standardResolution: Resolution? = null
 
-}
+)

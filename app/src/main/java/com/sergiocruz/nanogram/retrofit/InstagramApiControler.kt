@@ -1,7 +1,5 @@
 package com.sergiocruz.nanogram.retrofit
 
-import com.google.gson.ExclusionStrategy
-import com.google.gson.FieldAttributes
 import com.google.gson.GsonBuilder
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -22,11 +20,11 @@ class InstagramApiControler {
                 .create()
 
             val retrofit = Retrofit.Builder()
-                .baseUrl(ROOT_URL)
+                .baseUrl(API_ROOT_URL)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .build()
 
-            instagramAPI = retrofit.create(InstagramAPI::class.java!!)
+            instagramAPI = retrofit.create(InstagramAPI::class.java)
 
             return instagramAPI
         }
