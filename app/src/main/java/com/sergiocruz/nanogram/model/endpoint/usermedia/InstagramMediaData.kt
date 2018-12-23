@@ -49,6 +49,6 @@ data class InstagramMediaData(
     var videos: Videos? = null,
     @SerializedName("carousel_media")
     @Expose
-    var carouselMedia: List<Images>? = null
+    var carouselMedia: List<CarouselMedia>? = null
 
 )

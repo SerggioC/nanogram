@@ -19,4 +19,5 @@
     <string name="insta_api_uri_base">https://api.instagram.com/oauth/authorize/?</string>
     <string name="error_getting_media">Something went wrong getting user media</string>
     <string name="user_token">userToken</string>
+    <string name="information_icon">Information icon</string>
 </resources>

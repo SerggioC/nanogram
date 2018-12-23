@@ -11,7 +11,6 @@ import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.webkit.WebView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -23,8 +22,11 @@ import com.sergiocruz.nanogram.model.Token
 import com.sergiocruz.nanogram.retrofit.InstagramApiControler
 import com.sergiocruz.nanogram.service.getInstagramUrl
 import com.sergiocruz.nanogram.service.getRedirectUri
+import com.sergiocruz.nanogram.util.InfoLevel.ERROR
+import com.sergiocruz.nanogram.util.InfoLevel.INFO
 import com.sergiocruz.nanogram.util.encode
 import com.sergiocruz.nanogram.util.hasSavedToken
+import com.sergiocruz.nanogram.util.showToast
 import kotlinx.android.synthetic.main.activity_login.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -146,18 +148,18 @@ class LoginActivity : AppCompatActivity(), AutenticationWebViewClient.RedirectCa
         if (!result?.code.isNullOrEmpty()) {
             getAccessToken(result.code!!)
         } else {
-            Toast.makeText(
-                this, "Error Authorizing! \n" +
-                        "${result.error} \n" +
-                        "${result.errorDescription} \n" +
-                        "${result.errorReason} \n" +
-                        "Try again", Toast.LENGTH_LONG
-            ).show()
+            showToast(this, "Error Authorizing! \n" +
+                    "${result.error} \n" +
+                    "${result.errorDescription} \n" +
+                    "${result.errorReason} \n" +
+                    "Try again",
+                ERROR
+            )
         }
     }
 
     private fun getAccessToken(accessCode: String) {
-        Toast.makeText(this, "Access Code is $accessCode", Toast.LENGTH_LONG).show()
+        showToast(this, "Access Code is $accessCode", INFO)
 
         val apiController = InstagramApiControler().apiController
         apiController?.getAcessCode(

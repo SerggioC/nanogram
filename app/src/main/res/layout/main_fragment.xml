@@ -27,9 +27,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/message"
-        tools:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        tools:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
         tools:listitem="@layout/image_item_layout"
-        tools:spanCount="3" />
+        tools:spanCount="2" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

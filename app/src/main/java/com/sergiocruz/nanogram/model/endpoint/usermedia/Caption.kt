@@ -4,7 +4,7 @@ import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 import com.sergiocruz.nanogram.model.endpoint.comments.From
 
-class Caption(
+data class Caption(
     @SerializedName("created_time")
     @Expose
     var createdTime: String? = null,

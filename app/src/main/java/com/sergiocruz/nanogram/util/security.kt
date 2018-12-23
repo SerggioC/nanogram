@@ -4,7 +4,6 @@ import android.content.Context
 import android.preference.PreferenceManager
 import android.util.Base64
 import com.sergiocruz.nanogram.R
-import java.security.AccessControlContext
 
 fun hasSavedToken(context: Context): Boolean {
     val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context)
@@ -16,6 +15,8 @@ fun getSavedToken(context: Context): String {
     return decode(sharedPrefs.getString(context.getString(R.string.user_token), "-1")!!)
 }
 
+/** TODO: create tougher security */
 fun encode(input: String) = String(Base64.encode(input.toByteArray(), Base64.DEFAULT))
 
+/** TODO: create tougher security */
 fun decode(input: String) = String(Base64.decode(input.toByteArray(), Base64.DEFAULT))
