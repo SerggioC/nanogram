@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.sergiocruz.nanogram.R
+import com.sergiocruz.nanogram.model.ImageVar
 import com.sergiocruz.nanogram.model.endpoint.usermedia.ApiResponseMedia
 import com.sergiocruz.nanogram.retrofit.InstagramApiControler
 import com.sergiocruz.nanogram.util.InfoLevel.ERROR
@@ -17,9 +18,12 @@ import retrofit2.Response
 
 class MainViewModel : ViewModel() {
 
-    private var responseData: MutableLiveData<ApiResponseMedia> = MutableLiveData()
+    private var responseData: MutableLiveData<MutableList<ImageVar>> = MutableLiveData()
 
-    fun getUserMedia(context: Context): MutableLiveData<ApiResponseMedia> {
+    fun getUserMedia(context: Context): MutableLiveData<MutableList<ImageVar>> {
+        if (!responseData.value.isNullOrEmpty()) {
+            return responseData
+        }
         val apiController = InstagramApiControler().apiController!!
         val token = getSavedToken(context)
         val userMedia = apiController.getUserMedia(token)
@@ -32,7 +36,35 @@ class MainViewModel : ViewModel() {
                     val data = response.body()?.data
                     Log.i("Sergio> ", "data: $data")
 
-                    responseData.postValue(response.body())
+                    val imageList =
+                        (0 until data!!.size)
+                            .filter { data[it].type == "image" }
+                            .map { index ->
+                                ImageVar(
+                                    data[index].images,
+                                    data[index].likes,
+                                    data[index].comments,
+                                    data[index].caption
+                                )
+                            } as MutableList
+
+
+                    data.forEach {
+                        if (it.type == "carousel") {
+                            val images =
+                                List(it.carouselMedia!!.size) { index ->
+                                    ImageVar(
+                                        it.carouselMedia!![index].images,
+                                        it.likes,
+                                        it.comments,
+                                        it.caption
+                                    )
+                                }
+                            imageList.addAll(images)
+                        }
+                    }
+
+                    responseData.postValue(imageList)
 
                 } else {
                     showToast(context, context.getString(R.string.error_getting_media), WARNING)

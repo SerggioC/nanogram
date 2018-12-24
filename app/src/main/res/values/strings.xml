@@ -20,4 +20,5 @@
     <string name="error_getting_media">Something went wrong getting user media</string>
     <string name="user_token">userToken</string>
     <string name="information_icon">Information icon</string>
+    <string name="image_desc">Image item</string>
 </resources>

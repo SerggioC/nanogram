@@ -16,8 +16,8 @@ enum class InfoLevel {
     INFO, CONFIRM, WARNING, ERROR
 }
 //fun showCustomToast(context: Context, toastText: String, icon_RID: Int, text_color_Res_Id: Int, duration: Int? = Toast.LENGTH_LONG) {
-fun showToast(context: Context, toastText: String, level: InfoLevel, duration: Int = Toast.LENGTH_LONG) {
-    val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+fun showToast(context: Context?, toastText: String, level: InfoLevel, duration: Int = Toast.LENGTH_LONG) {
+    val inflater = context?.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
     if (inflater == null) {
         Toast.makeText(context, toastText, duration).show()
         return
