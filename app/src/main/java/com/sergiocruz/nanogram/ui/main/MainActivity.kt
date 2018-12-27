@@ -1,7 +1,7 @@
 package com.sergiocruz.nanogram.ui.main
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import com.sergiocruz.nanogram.R
 
 class MainActivity : AppCompatActivity() {
@@ -16,4 +16,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        if (fragmentManager.backStackEntryCount == 0) {
+            super.onBackPressed()
+        } else {
+            fragmentManager.popBackStack()
+        }
+    }
 }

@@ -24,6 +24,7 @@ import kotlin.random.Random
 
 class ImagesAdapter(private val imageClickListener: ImageClickListener) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
     private var imageList: MutableList<ImageVar>? = null
 
     override fun getItemCount(): Int {
@@ -47,24 +48,20 @@ class ImagesAdapter(private val imageClickListener: ImageClickListener) :
         val image: ImageVar? = imageList?.get(position)
         holder as ItemImageViewHolder
 
-//        val url =
-//            if (Random.nextBoolean()) image?.images?.thumbnail?.url else image?.images?.standardResolution?.url
-//
         val url = image?.images?.thumbnail?.url
-
         Glide.with(holder.imageView.context)
             .load(url)
             .listener(object : RequestListener<Drawable> {
                 override fun onResourceReady(resource: Drawable, model: Any, target: Target<Drawable>, dataSource: DataSource, isFirstResource: Boolean): Boolean {
                     target.getSize { width, height ->
                         // Change images height randomly by 15%
-                        val rand = if (Random.nextBoolean()) 1.15 else 1.0
-                        holder.imageView.layoutParams.height = (height * rand).toInt()
-                        holder.imageView.layoutParams.width = WRAP_CONTENT
-                        holder.itemView.layoutParams.height = WRAP_CONTENT
-                        holder.itemView.layoutParams.width = WRAP_CONTENT
+                        if (Random.nextBoolean()) {
+                            holder.imageView.layoutParams.height = (height * 1.15).toInt()
+                            holder.imageView.layoutParams.width = WRAP_CONTENT
+                            holder.itemView.layoutParams.height = WRAP_CONTENT
+                            holder.itemView.layoutParams.width = WRAP_CONTENT
+                        }
                     }
-
                     return false
                 }
                 override fun onLoadFailed(e: GlideException?, model: Any, target: Target<Drawable>, isFirstResource: Boolean) = false
@@ -77,6 +74,7 @@ class ImagesAdapter(private val imageClickListener: ImageClickListener) :
             )
             .into(holder.imageView)
 
+
         holder.caption.text = image?.caption?.text
         holder.likes.text = image?.likes?.count.toString()
         holder.comments.text = image?.comments?.count.toString()
@@ -85,7 +83,9 @@ class ImagesAdapter(private val imageClickListener: ImageClickListener) :
     }
 
     interface ImageClickListener {
-        fun onImageClicked(image: ImageVar?)
+        fun onImageClicked(
+            adapterPosition: Int
+        )
     }
 
     inner class ItemImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -96,7 +96,7 @@ class ImagesAdapter(private val imageClickListener: ImageClickListener) :
 
         init {
             imageView.setOnClickListener {
-                imageClickListener.onImageClicked(imageList?.get(adapterPosition))
+                imageClickListener.onImageClicked(adapterPosition)
             }
         }
     }

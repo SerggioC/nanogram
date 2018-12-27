@@ -24,10 +24,10 @@ class MainViewModel : ViewModel() {
         if (!responseData.value.isNullOrEmpty()) {
             return responseData
         }
-        val apiController = InstagramApiControler().apiController!!
+        val apiController = InstagramApiControler().apiController
         val token = getSavedToken(context)
-        val userMedia = apiController.getUserMedia(token)
-        userMedia.enqueue(object : Callback<ApiResponseMedia> {
+        val userMedia = apiController?.getUserMedia(token)
+        userMedia?.enqueue(object : Callback<ApiResponseMedia> {
             override fun onResponse(
                 call: Call<ApiResponseMedia>,
                 response: Response<ApiResponseMedia>
@@ -48,7 +48,6 @@ class MainViewModel : ViewModel() {
                                 )
                             } as MutableList
 
-
                     data.forEach {
                         if (it.type == "carousel") {
                             val images =
@@ -68,7 +67,10 @@ class MainViewModel : ViewModel() {
 
                 } else {
                     showToast(context, context.getString(R.string.error_getting_media), WARNING)
-                    Log.w("Sergio> ", "response code: ${response.code()} ${response.errorBody().toString()} ${response.message()}")
+                    Log.w(
+                        "Sergio> ",
+                        "response code: ${response.code()} ${response.errorBody().toString()} ${response.message()}"
+                    )
                 }
             }
 
@@ -80,6 +82,11 @@ class MainViewModel : ViewModel() {
         })
 
         return responseData
+    }
+
+
+    fun getImageVarForIndex(index: Int, context: Context): ImageVar {
+        return getUserMedia(context).value?.get(index)!!
     }
 
 }

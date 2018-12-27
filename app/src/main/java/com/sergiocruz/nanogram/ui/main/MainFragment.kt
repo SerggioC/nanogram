@@ -25,14 +25,12 @@ import com.sergiocruz.nanogram.BuildConfig
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.adapter.ImagesAdapter
 import com.sergiocruz.nanogram.adapter.MyItemDecoration
-import com.sergiocruz.nanogram.model.ImageVar
 import com.sergiocruz.nanogram.model.RedirectResult
 import com.sergiocruz.nanogram.model.Token
 import com.sergiocruz.nanogram.retrofit.InstagramApiControler
 import com.sergiocruz.nanogram.service.getInstagramUrl
 import com.sergiocruz.nanogram.service.getRedirectUri
 import com.sergiocruz.nanogram.util.InfoLevel.ERROR
-import com.sergiocruz.nanogram.util.InfoLevel.WARNING
 import com.sergiocruz.nanogram.util.encode
 import com.sergiocruz.nanogram.util.hasSavedToken
 import com.sergiocruz.nanogram.util.showToast
@@ -85,7 +83,7 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
     }
 
     private fun initializeViewModel() {
-        viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
+        viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
         viewModel.getUserMedia(this.context!!).observe(this, Observer {
             imagesAdapter.swap(it)
             showProgress(false)
@@ -251,12 +249,16 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
 
     }
 
-    override fun onImageClicked(image: ImageVar?) {
-        gotoImageDetails(image)
+    override fun onImageClicked(adapterPosition: Int) {
+        gotoImageDetails(adapterPosition)
     }
 
-    private fun gotoImageDetails(image: ImageVar?) {
-        showToast(this.context, "${image?.caption?.text ?: ""} Not done yet!", WARNING)
+    private fun gotoImageDetails(index: Int) {
+        fragmentManager?.beginTransaction()
+            ?.add(R.id.container, DetailsFragment.newInstance(index))
+            ?.addToBackStack(null)
+            ?.commit()
+
     }
 
     private fun getOut() {
