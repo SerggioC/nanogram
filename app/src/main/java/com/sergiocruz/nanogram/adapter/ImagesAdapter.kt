@@ -1,6 +1,7 @@
 package com.sergiocruz.nanogram.adapter
 
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -80,6 +81,9 @@ class ImagesAdapter(private val imageClickListener: ImageClickListener) :
         holder.comments.text = image?.comments?.count.toString()
 
         animateItemViewSlideFromBottom(holder.itemView, (50 * position).toLong())
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            holder.imageView.transitionName = url
     }
 
     interface ImageClickListener {

@@ -40,7 +40,7 @@ class ImagePagerFragment : Fragment() {
                 listIndex = arguments!!.getInt(ARG_ITEM_INDEX)
             }
         }
-        // same layout as the item recyclerview just for testing
+        // same layout as the item recyclerview just for testing and simplicity
         return inflater.inflate(R.layout.image_item_layout, container, false)
     }
 
@@ -54,7 +54,7 @@ class ImagePagerFragment : Fragment() {
     private fun setupViews(imageVar: ImageVar?) {
         likes.text = imageVar?.likes?.count?.toString() ?: ""
         comments.text = imageVar?.comments?.count?.toString() ?: ""
-        caption.text = imageVar?.comments?.count?.toString() ?: ""
+        caption.text = imageVar?.caption?.text ?: ""
 
         val url = imageVar?.images?.thumbnail?.url
         Glide.with(this.context!!)
@@ -66,6 +66,16 @@ class ImagePagerFragment : Fragment() {
                     .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
             )
             .into(image_item)
+
+        root_item_layout.setOnClickListener {
+            likes.toggle()
+            comments.toggle()
+            caption.toggle()
+        }
+    }
+
+    private fun View.toggle() {
+        visibility = if (visibility == View.VISIBLE) View.GONE else View.VISIBLE
     }
 
 

@@ -2,26 +2,30 @@ package com.sergiocruz.nanogram.ui.main
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
-import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
+import android.graphics.Matrix
+import android.graphics.RectF
+import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.preference.PreferenceManager
+import android.transition.TransitionInflater
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.WebView
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import androidx.core.app.SharedElementCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager.VERTICAL
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.sergiocruz.nanogram.BuildConfig
+import com.sergiocruz.nanogram.Convert
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.adapter.ImagesAdapter
 import com.sergiocruz.nanogram.adapter.MyItemDecoration
@@ -34,6 +38,8 @@ import com.sergiocruz.nanogram.util.InfoLevel.ERROR
 import com.sergiocruz.nanogram.util.encode
 import com.sergiocruz.nanogram.util.hasSavedToken
 import com.sergiocruz.nanogram.util.showToast
+import kotlinx.android.synthetic.main.image_item_layout.*
+import kotlinx.android.synthetic.main.image_item_layout.view.*
 import kotlinx.android.synthetic.main.main_fragment.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -44,16 +50,10 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
 
     companion object {
         fun newInstance() = MainFragment()
-        private const val PERMISSION_REQUESTS_CODE = 1
     }
 
     private lateinit var viewModel: MainViewModel
     private lateinit var imagesAdapter: ImagesAdapter
-
-    override fun onAttach(context: Context?) {
-        super.onAttach(context)
-        if (!allPermissionsGranted()) getRuntimePermissions()
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -87,62 +87,9 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
         viewModel.getUserMedia(this.context!!).observe(this, Observer {
             imagesAdapter.swap(it)
             showProgress(false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+                Convert.prepareTransitionsJava(this.context,  activity, images_recyclerview, this)
         })
-    }
-
-    private fun allPermissionsGranted(): Boolean {
-        for (permission in getRequiredPermissions()) {
-            if (!isPermissionGranted(permission!!)) {
-                return false
-            }
-        }
-        return true
-    }
-
-    private fun getRuntimePermissions() {
-        val allNeededPermissions: ArrayList<String> = ArrayList(0)
-        for (permission in getRequiredPermissions()) {
-            if (!isPermissionGranted(permission!!)) {
-                allNeededPermissions.add(permission)
-            }
-        }
-
-        if (!allNeededPermissions.isEmpty()) {
-            ActivityCompat.requestPermissions(
-                activity as Activity, allNeededPermissions.toTypedArray(),
-                PERMISSION_REQUESTS_CODE
-            )
-        }
-    }
-
-    /** Read and return manifest uses-permission fields */
-    private fun getRequiredPermissions(): Array<String?> {
-        return try {
-            val info = this.context?.packageManager?.getPackageInfo(
-                this.activity?.packageName,
-                PackageManager.GET_PERMISSIONS
-            )
-            val permissions = info?.requestedPermissions
-            if (permissions != null && permissions.isNotEmpty()) {
-                permissions
-            } else {
-                arrayOfNulls(0)
-            }
-        } catch (e: Exception) {
-            arrayOfNulls(0)
-        }
-    }
-
-    private fun isPermissionGranted(permission: String): Boolean {
-        val granted = ContextCompat.checkSelfPermission(
-            this.context!!,
-            permission
-        ) == PackageManager.PERMISSION_GRANTED
-        Log.i(
-            "Sergio> Sergio>",
-            "Permission $permission ${if (granted) "granted" else "NOT granted"}"
-        )
-        return granted
     }
 
     private fun getAuthWebView(): WebView {
@@ -162,8 +109,8 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
             .setView(getAuthWebView())
             .create()
         alertDialog.setOnShowListener {
-            alertDialog.window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
-            alertDialog.window.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
         }
         alertDialog.show()
     }
@@ -172,8 +119,8 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
         alertDialog.dismiss()
         showProgress(false)
 
-        if (!result?.code.isNullOrEmpty()) {
-            getAccessToken(result.code!!)
+        if (!result.code.isNullOrEmpty()) {
+            getAccessToken(result.code)
         } else {
             showToast(
                 this.context, "Error Authorizing! \n" +
@@ -220,7 +167,6 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
         })
     }
 
-
     internal fun saveToken(token: String) {
         val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this.context).edit()
         val encoded = encode(token)
@@ -249,16 +195,114 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
 
     }
 
-    override fun onImageClicked(adapterPosition: Int) {
-        gotoImageDetails(adapterPosition)
+    /** Prepares the shared element transition to the pager fragment,
+     * as well as the other transitions that affect the flow. */
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    private fun prepareTransitions() {
+        exitTransition =
+                TransitionInflater.from(context)
+                    .inflateTransition(R.transition.grid_exit_transition)
+
+        // A similar mapping is set at the ArticlePagerFragment with a setEnterSharedElementCallback.
+        //val exitSharedElementCallback =
+
+        setExitSharedElementCallback(object : SharedElementCallback() {
+
+            override fun onRejectSharedElements(rejectedSharedElements: MutableList<View>?) {
+                super.onRejectSharedElements(rejectedSharedElements)
+            }
+
+            override fun onSharedElementEnd(
+                sharedElementNames: MutableList<String>?,
+                sharedElements: MutableList<View>?,
+                sharedElementSnapshots: MutableList<View>?
+            ) {
+                super.onSharedElementEnd(sharedElementNames, sharedElements, sharedElementSnapshots)
+            }
+
+            override fun onCaptureSharedElementSnapshot(
+                sharedElement: View?,
+                viewToGlobalMatrix: Matrix?,
+                screenBounds: RectF?
+            ): Parcelable {
+                return super.onCaptureSharedElementSnapshot(
+                    sharedElement,
+                    viewToGlobalMatrix,
+                    screenBounds
+                )
+            }
+
+            override fun onSharedElementsArrived(
+                sharedElementNames: MutableList<String>?,
+                sharedElements: MutableList<View>?,
+                listener: OnSharedElementsReadyListener?
+            ) {
+                super.onSharedElementsArrived(sharedElementNames, sharedElements, listener)
+            }
+
+            override fun onCreateSnapshotView(context: Context?, snapshot: Parcelable?): View {
+                return super.onCreateSnapshotView(context, snapshot)
+            }
+
+            override fun onSharedElementStart(
+                sharedElementNames: MutableList<String>?,
+                sharedElements: MutableList<View>?,
+                sharedElementSnapshots: MutableList<View>?
+            ) {
+                super.onSharedElementStart(
+                    sharedElementNames,
+                    sharedElements,
+                    sharedElementSnapshots
+                )
+            }
+
+            override fun onMapSharedElements(names: List<String>, sharedElements: MutableMap<String, View>) {
+                super.onMapSharedElements(names, sharedElements)
+                // Locate the ViewHolder for the clicked position.
+                val selectedViewHolder =
+                    images_recyclerview.findViewHolderForAdapterPosition(MainActivity.currentPosition)
+                        ?: return
+
+                // Map the first shared element name to the child ImageView.
+                sharedElements[names[0]] = selectedViewHolder.itemView.image_item
+            }
+        })
+
+        postponeEnterTransition()
     }
 
-    private fun gotoImageDetails(index: Int) {
-        fragmentManager?.beginTransaction()
+
+    override fun onImageClicked(adapterPosition: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            gotoImageDetailsTransition(adapterPosition)
+        } else {
+            gotoImageDetails(adapterPosition)
+        }
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    private fun gotoImageDetailsTransition(index: Int) {
+
+        // Exclude the clicked card from the exit transition (e.g. the card will disappear immediately
+        // instead of fading out with the rest to prevent an overlapping animation of fade and move).
+        (exitTransition as android.transition.TransitionSet).excludeTarget(view, true)
+
+        fragmentManager
+            ?.beginTransaction()
+            ?.setReorderingAllowed(true) // Optimize for shared element transition.
+            ?.addSharedElement(image_item, image_item.transitionName)
             ?.add(R.id.container, DetailsFragment.newInstance(index))
             ?.addToBackStack(null)
             ?.commit()
+    }
 
+    private fun gotoImageDetails(index: Int) {
+        fragmentManager
+            ?.beginTransaction()
+            ?.add(R.id.container, DetailsFragment.newInstance(index))
+            ?.addToBackStack(null)
+            ?.commit()
     }
 
     private fun getOut() {

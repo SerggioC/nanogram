@@ -24,5 +24,4 @@ open class ViewPagerAdapter(fragment: Fragment, private var index: Int) :
         return ImagePagerFragment.newInstance(position)
     }
 
-
 }
