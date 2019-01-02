@@ -1,5 +1,7 @@
 package com.sergiocruz.nanogram.ui.main
 
+import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -7,24 +9,29 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.Target
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
-import kotlinx.android.synthetic.main.image_item_layout.*
+import kotlinx.android.synthetic.main.fragment_image.*
 
-class ImagePagerFragment : Fragment() {
+
+class ImageFragment : Fragment() {
     private var listIndex: Int = -1
 
     companion object {
         private const val ARG_ITEM_INDEX = "item_index"
-        fun newInstance(index: Int): ImagePagerFragment {
+        fun newInstance(index: Int): ImageFragment {
             val arguments = Bundle()
             arguments.putInt(ARG_ITEM_INDEX, index)
-            val detailFragment = ImagePagerFragment()
-            detailFragment.arguments = arguments
-            return detailFragment
+            val imageFragment = ImageFragment()
+            imageFragment.arguments = arguments
+            return imageFragment
         }
     }
 
@@ -41,7 +48,13 @@ class ImagePagerFragment : Fragment() {
             }
         }
         // same layout as the item recyclerview just for testing and simplicity
-        return inflater.inflate(R.layout.image_item_layout, container, false)
+        val view = inflater.inflate(R.layout.fragment_image, container, false)
+
+        // Avoid a postponeEnterTransition on orientation change, and postpone only of first creation.
+        if (savedInstanceState == null) {
+            postponeEnterTransition()
+        }
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -57,15 +70,42 @@ class ImagePagerFragment : Fragment() {
         caption.text = imageVar?.caption?.text ?: ""
 
         val url = imageVar?.images?.thumbnail?.url
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            imageview.transitionName = url
+        }
+
         Glide.with(this.context!!)
             .load(url)
+            .listener(object: RequestListener<Drawable?> {
+                override fun onResourceReady(
+                    resource: Drawable?,
+                    model: Any?,
+                    target: Target<Drawable?>?,
+                    dataSource: DataSource?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    parentFragment?.startPostponedEnterTransition()
+                    return false
+                }
+
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable?>?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    parentFragment?.startPostponedEnterTransition()
+                    return false
+                }
+            })
             .transition(DrawableTransitionOptions.withCrossFade())
             .apply(
                 RequestOptions()
                     .error(R.mipmap.ic_launcher)
                     .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
             )
-            .into(image_item)
+            .into(imageview)
 
         root_item_layout.setOnClickListener {
             likes.toggle()

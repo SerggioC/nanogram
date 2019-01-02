@@ -19,14 +19,21 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
+import com.sergiocruz.nanogram.ui.main.GridFragment
+import com.sergiocruz.nanogram.ui.main.MainActivity
 import com.sergiocruz.nanogram.util.animateItemViewSlideFromBottom
 import kotlinx.android.synthetic.main.image_item_layout.view.*
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.random.Random
 
-class ImagesAdapter(private val imageClickListener: ImageClickListener) :
+class GridImageAdapter(
+    private val imageClickListener: ImageClickListener,
+    private val gridFragment: GridFragment
+) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var imageList: MutableList<ImageVar>? = null
+    private val enterTransitionStarted = AtomicBoolean()
 
     override fun getItemCount(): Int {
         return imageList?.size ?: 0
@@ -50,10 +57,27 @@ class ImagesAdapter(private val imageClickListener: ImageClickListener) :
         holder as ItemImageViewHolder
 
         val url = image?.images?.thumbnail?.url
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            holder.imageView.transitionName = url
+
         Glide.with(holder.imageView.context)
             .load(url)
             .listener(object : RequestListener<Drawable> {
-                override fun onResourceReady(resource: Drawable, model: Any, target: Target<Drawable>, dataSource: DataSource, isFirstResource: Boolean): Boolean {
+                override fun onResourceReady(
+                    resource: Drawable,
+                    model: Any,
+                    target: Target<Drawable>,
+                    dataSource: DataSource,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    if (MainActivity.currentPosition != position) {
+                        return false
+                    }
+                    if (enterTransitionStarted.getAndSet(true)) {
+                        return false
+                    }
+                    gridFragment.startPostponedEnterTransition()
                     target.getSize { width, height ->
                         // Change images height randomly by 15%
                         if (Random.nextBoolean()) {
@@ -62,10 +86,17 @@ class ImagesAdapter(private val imageClickListener: ImageClickListener) :
                             holder.itemView.layoutParams.height = WRAP_CONTENT
                             holder.itemView.layoutParams.width = WRAP_CONTENT
                         }
+
                     }
                     return false
                 }
-                override fun onLoadFailed(e: GlideException?, model: Any, target: Target<Drawable>, isFirstResource: Boolean) = false
+
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any,
+                    target: Target<Drawable>,
+                    isFirstResource: Boolean
+                ) = false
             })
             .transition(withCrossFade())
             .apply(
@@ -75,15 +106,12 @@ class ImagesAdapter(private val imageClickListener: ImageClickListener) :
             )
             .into(holder.imageView)
 
-
         holder.caption.text = image?.caption?.text
         holder.likes.text = image?.likes?.count.toString()
         holder.comments.text = image?.comments?.count.toString()
 
         animateItemViewSlideFromBottom(holder.itemView, (50 * position).toLong())
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-            holder.imageView.transitionName = url
     }
 
     interface ImageClickListener {
@@ -93,7 +121,7 @@ class ImagesAdapter(private val imageClickListener: ImageClickListener) :
     }
 
     inner class ItemImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        internal val imageView: ImageView = itemView.image_item
+        internal val imageView: ImageView = itemView.item_image
         internal val caption: TextView = itemView.caption
         internal val likes: TextView = itemView.likes
         internal val comments: TextView = itemView.comments

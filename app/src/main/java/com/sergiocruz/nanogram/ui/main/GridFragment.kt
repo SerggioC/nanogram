@@ -2,14 +2,10 @@ package com.sergiocruz.nanogram.ui.main
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
-import android.content.Context
-import android.graphics.Matrix
-import android.graphics.RectF
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.os.Parcelable
 import android.preference.PreferenceManager
-import android.transition.TransitionInflater
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -24,10 +20,10 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager.VERTICAL
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.transition.TransitionInflater
 import com.sergiocruz.nanogram.BuildConfig
-import com.sergiocruz.nanogram.Convert
 import com.sergiocruz.nanogram.R
-import com.sergiocruz.nanogram.adapter.ImagesAdapter
+import com.sergiocruz.nanogram.adapter.GridAdapter
 import com.sergiocruz.nanogram.adapter.MyItemDecoration
 import com.sergiocruz.nanogram.model.RedirectResult
 import com.sergiocruz.nanogram.model.Token
@@ -38,28 +34,28 @@ import com.sergiocruz.nanogram.util.InfoLevel.ERROR
 import com.sergiocruz.nanogram.util.encode
 import com.sergiocruz.nanogram.util.hasSavedToken
 import com.sergiocruz.nanogram.util.showToast
+import kotlinx.android.synthetic.main.grid_fragment.*
 import kotlinx.android.synthetic.main.image_item_layout.*
 import kotlinx.android.synthetic.main.image_item_layout.view.*
-import kotlinx.android.synthetic.main.main_fragment.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
+class GridFragment : Fragment(),
+    //GridImageAdapter.ImageClickListener,
     AutenticationWebViewClient.RedirectCallback {
 
     companion object {
-        fun newInstance() = MainFragment()
+        fun newInstance() = GridFragment()
     }
 
     private lateinit var viewModel: MainViewModel
-    private lateinit var imagesAdapter: ImagesAdapter
+    //private lateinit var gridImageAdapter: GridImageAdapter
+    private lateinit var gridAdapter: GridAdapter
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View = inflater.inflate(R.layout.main_fragment, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        return inflater.inflate(R.layout.grid_fragment, container, false)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -70,28 +66,62 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
         } else {
             loadInstagramWebView()
         }
+        scrollToPosition()
+    }
+
+    private fun scrollToPosition() {
+        images_recyclerview.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+            override fun onLayoutChange(
+                view: View,
+                left: Int,
+                top: Int,
+                right: Int,
+                bottom: Int,
+                oldLeft: Int,
+                oldTop: Int,
+                oldRight: Int,
+                oldBottom: Int
+            ) {
+                images_recyclerview.removeOnLayoutChangeListener(this)
+                val layoutManager = images_recyclerview.layoutManager
+                val viewAtPosition =
+                    layoutManager!!.findViewByPosition(MainActivity.currentPosition)
+                // Scroll to position if the view for the current position is null
+                // (not currently part of layout manager children), or it's not completely visible.
+                if (viewAtPosition == null || layoutManager.isViewPartiallyVisible(viewAtPosition, false, true)) {
+                    images_recyclerview!!.post { layoutManager.scrollToPosition(MainActivity.currentPosition) }
+                }
+            }
+        })
     }
 
     private fun initializeRecyclerView() {
-        imagesAdapter = ImagesAdapter(this)
+        //gridImageAdapter = GridImageAdapter(this, this)
+        gridAdapter = GridAdapter(this)
+        gridAdapter.setHasStableIds(true)
         images_recyclerview?.layoutManager =
                 StaggeredGridLayoutManager(resources.getInteger(R.integer.span_count), VERTICAL)
         images_recyclerview?.setHasFixedSize(false)
         images_recyclerview?.addItemDecoration(MyItemDecoration(10))
-        images_recyclerview?.adapter = imagesAdapter
+        //images_recyclerview?.adapter = gridImageAdapter
+        images_recyclerview?.adapter = gridAdapter
         initializeViewModel()
     }
 
     private fun initializeViewModel() {
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
         viewModel.getUserMedia(this.context!!).observe(this, Observer {
-            imagesAdapter.swap(it)
+            //gridImageAdapter.swap(it)
+            gridAdapter.swap(it)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                prepareExitTransitions()
+                postponeEnterTransition()
+            }
             showProgress(false)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                Convert.prepareTransitionsJava(this.context,  activity, images_recyclerview, this)
         })
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private fun getAuthWebView(): WebView {
         val webView = WebView(this.context)
         webView.isVerticalScrollBarEnabled = false
@@ -173,9 +203,7 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
         sharedPrefs.putString(getString(R.string.user_token), encoded).apply()
     }
 
-    /**
-     * Shows the progress UI
-     */
+    /** Shows the progress UI */
     private fun showProgress(show: Boolean) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
         // for very easy animations. If available, use these APIs to fade-in
@@ -198,64 +226,13 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
     /** Prepares the shared element transition to the pager fragment,
      * as well as the other transitions that affect the flow. */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun prepareTransitions() {
-        exitTransition =
-                TransitionInflater.from(context)
-                    .inflateTransition(R.transition.grid_exit_transition)
+    private fun prepareExitTransitions() {
+        exitTransition = TransitionInflater.from(activity)
+            .inflateTransition(R.transition.grid_exit_transition)
+            .setDuration(resources.getInteger(R.integer.transition_duration).toLong())
 
-        // A similar mapping is set at the ArticlePagerFragment with a setEnterSharedElementCallback.
-        //val exitSharedElementCallback =
-
+        // A similar mapping is set at the ImageFragment with a setEnterSharedElementCallback.
         setExitSharedElementCallback(object : SharedElementCallback() {
-
-            override fun onRejectSharedElements(rejectedSharedElements: MutableList<View>?) {
-                super.onRejectSharedElements(rejectedSharedElements)
-            }
-
-            override fun onSharedElementEnd(
-                sharedElementNames: MutableList<String>?,
-                sharedElements: MutableList<View>?,
-                sharedElementSnapshots: MutableList<View>?
-            ) {
-                super.onSharedElementEnd(sharedElementNames, sharedElements, sharedElementSnapshots)
-            }
-
-            override fun onCaptureSharedElementSnapshot(
-                sharedElement: View?,
-                viewToGlobalMatrix: Matrix?,
-                screenBounds: RectF?
-            ): Parcelable {
-                return super.onCaptureSharedElementSnapshot(
-                    sharedElement,
-                    viewToGlobalMatrix,
-                    screenBounds
-                )
-            }
-
-            override fun onSharedElementsArrived(
-                sharedElementNames: MutableList<String>?,
-                sharedElements: MutableList<View>?,
-                listener: OnSharedElementsReadyListener?
-            ) {
-                super.onSharedElementsArrived(sharedElementNames, sharedElements, listener)
-            }
-
-            override fun onCreateSnapshotView(context: Context?, snapshot: Parcelable?): View {
-                return super.onCreateSnapshotView(context, snapshot)
-            }
-
-            override fun onSharedElementStart(
-                sharedElementNames: MutableList<String>?,
-                sharedElements: MutableList<View>?,
-                sharedElementSnapshots: MutableList<View>?
-            ) {
-                super.onSharedElementStart(
-                    sharedElementNames,
-                    sharedElements,
-                    sharedElementSnapshots
-                )
-            }
-
             override fun onMapSharedElements(names: List<String>, sharedElements: MutableMap<String, View>) {
                 super.onMapSharedElements(names, sharedElements)
                 // Locate the ViewHolder for the clicked position.
@@ -264,43 +241,38 @@ class MainFragment : Fragment(), ImagesAdapter.ImageClickListener,
                         ?: return
 
                 // Map the first shared element name to the child ImageView.
-                sharedElements[names[0]] = selectedViewHolder.itemView.image_item
+                sharedElements[names[0]] = selectedViewHolder.itemView.item_image
             }
         })
-
-        postponeEnterTransition()
     }
 
-
-    override fun onImageClicked(adapterPosition: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            gotoImageDetailsTransition(adapterPosition)
-        } else {
-            gotoImageDetails(adapterPosition)
-        }
-    }
-
+//    override fun onImageClicked(adapterPosition: Int) {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            gotoImageDetailsTransition(adapterPosition)
+//        } else {
+//            gotoImageDetails(adapterPosition)
+//        }
+//    }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun gotoImageDetailsTransition(index: Int) {
-
-        // Exclude the clicked card from the exit transition (e.g. the card will disappear immediately
-        // instead of fading out with the rest to prevent an overlapping animation of fade and move).
-        (exitTransition as android.transition.TransitionSet).excludeTarget(view, true)
+        //(this.exitTransition as TransitionSet).excludeTarget(view, true)
 
         fragmentManager
             ?.beginTransaction()
             ?.setReorderingAllowed(true) // Optimize for shared element transition.
-            ?.addSharedElement(image_item, image_item.transitionName)
-            ?.add(R.id.container, DetailsFragment.newInstance(index))
+            ?.addSharedElement(item_image, item_image.transitionName)
+            ?.add(R.id.container, DetailsViewPagerFragment.newInstance(index))
             ?.addToBackStack(null)
             ?.commit()
+
+        Log.i("Sergio> ", "exitTransition: $exitTransition")
     }
 
     private fun gotoImageDetails(index: Int) {
         fragmentManager
             ?.beginTransaction()
-            ?.add(R.id.container, DetailsFragment.newInstance(index))
+            ?.add(R.id.container, DetailsViewPagerFragment.newInstance(index))
             ?.addToBackStack(null)
             ?.commit()
     }

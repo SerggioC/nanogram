@@ -8,8 +8,8 @@ import com.sergiocruz.nanogram.getRuntimePermissions
 
 class MainActivity : AppCompatActivity() {
 
-    public companion object {
-        public var currentPosition: Int = 0
+    companion object {
+        var currentPosition: Int = 0
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,17 +17,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.main_activity)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.container, MainFragment.newInstance())
+                .replace(R.id.container, GridFragment.newInstance())
                 .commitNow()
         }
         if (!allPermissionsGranted(this)) getRuntimePermissions(this)
     }
 
-    override fun onBackPressed() {
-        if (fragmentManager.backStackEntryCount == 0) {
-            super.onBackPressed()
-        } else {
-            fragmentManager.popBackStack()
-        }
-    }
 }

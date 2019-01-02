@@ -19,7 +19,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <fade>
-        <targets android:targetId="@id/image_item"/>
+        <targets android:targetId="@id/item_image"/>
     </fade>
 
 </transitionSet>
