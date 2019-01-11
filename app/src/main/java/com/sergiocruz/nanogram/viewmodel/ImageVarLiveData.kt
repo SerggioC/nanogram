@@ -21,13 +21,15 @@ class ImageVarLiveData(context: Context) : MutableLiveData<MutableList<ImageVar>
     private var disposable: Disposable? =
         apiController
             ?.getUserMedia(getSavedToken(context))
-            ?.onErrorResumeNext {
-                observer: Observer<in ApiResponseMedia> ->
+            ?.onErrorResumeNext { observer: Observer<in ApiResponseMedia> ->
+                Timber.e("gotcha! error on thread ${getThread()}, resuming")
                 this.postValue(getDataFromLocalDatabase(context))
             }
             ?.subscribeOn(Schedulers.io())
             ?.flatMap { result: ApiResponseMedia ->
                 parseResponse(result)
+                    /** Can use a new thread to save to database
+                     * Using previous Schedulers.io */
                     //.subscribeOn(Schedulers.computation())
                     .doOnNext { data: MutableList<ImageVar> ->
                         Timber.w("saving to database on thread ${getThread()} data size: ${data.size}")

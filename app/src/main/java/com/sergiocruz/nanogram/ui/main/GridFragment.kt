@@ -30,6 +30,7 @@ import com.sergiocruz.nanogram.service.getInstagramUrl
 import com.sergiocruz.nanogram.service.getRedirectUri
 import com.sergiocruz.nanogram.util.InfoLevel.ERROR
 import com.sergiocruz.nanogram.util.encode
+import com.sergiocruz.nanogram.util.exitFullScreen
 import com.sergiocruz.nanogram.util.hasSavedToken
 import com.sergiocruz.nanogram.util.showToast
 import kotlinx.android.synthetic.main.grid_fragment.*
@@ -51,7 +52,11 @@ class GridFragment : Fragment(),
     private lateinit var gridImageAdapter: GridImageAdapter
     //private lateinit var gridAdapter: GridAdapter
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         return inflater.inflate(R.layout.grid_fragment, container, false)
     }
 
@@ -65,6 +70,11 @@ class GridFragment : Fragment(),
             loadInstagramWebView()
         }
         scrollToPosition()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        exitFullScreen(activity)
     }
 
     private fun scrollToPosition() {
@@ -87,8 +97,15 @@ class GridFragment : Fragment(),
                     layoutManager!!.findViewByPosition(MainActivity.currentPosition)
                 // Scroll to position if the view for the current position is null
                 // (not currently part of layout manager children), or it's not completely visible.
-                if (viewAtPosition == null || layoutManager.isViewPartiallyVisible(viewAtPosition, false, true)) {
-                    images_recyclerview!!.post { layoutManager.scrollToPosition(MainActivity.currentPosition) }
+//                if (viewAtPosition == null || layoutManager.isViewPartiallyVisible(
+//                        viewAtPosition,
+//                        false,
+//                        true
+//                    )
+//                ) {
+                    images_recyclerview.post {
+                        layoutManager.scrollToPosition(MainActivity.currentPosition)
+//                    }
                 }
             }
         })
@@ -227,13 +244,17 @@ class GridFragment : Fragment(),
      * as well as the other transitions that affect the flow. */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun prepareExitTransitions() {
+        Timber.d("Preparing transitions")
         exitTransition = TransitionInflater.from(activity)
             .inflateTransition(R.transition.grid_exit_transition)
             .setDuration(resources.getInteger(R.integer.transition_duration).toLong())
 
         // A similar mapping is set at the ImageFragment with a setEnterSharedElementCallback.
         setExitSharedElementCallback(object : SharedElementCallback() {
-            override fun onMapSharedElements(names: List<String>, sharedElements: MutableMap<String, View>) {
+            override fun onMapSharedElements(
+                names: List<String>,
+                sharedElements: MutableMap<String, View>
+            ) {
                 super.onMapSharedElements(names, sharedElements)
                 // Locate the ViewHolder for the clicked position.
                 val selectedViewHolder =
@@ -243,7 +264,7 @@ class GridFragment : Fragment(),
                 // Map the first shared element name to the child ImageView.
                 val name = selectedViewHolder.itemView.item_image
                 sharedElements[names[0]] = name
-                Timber.i("on exit onMap name: $name")
+                Timber.i("onexitonMapname: ${name.hashCode()}")
             }
         })
     }

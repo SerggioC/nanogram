@@ -18,6 +18,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
+import com.sergiocruz.nanogram.util.enterFullScreen
 import kotlinx.android.synthetic.main.fragment_image.*
 import timber.log.Timber
 
@@ -48,14 +49,8 @@ class ImageFragment : Fragment() {
                 listIndex = arguments!!.getInt(ARG_ITEM_INDEX)
             }
         }
-        // same layout as the item recyclerview just for testing and simplicity
-        val view = inflater.inflate(R.layout.fragment_image, container, false)
-
-        // Avoid a postponeEnterTransition on orientation change, and postpone only of first creation.
-        if (savedInstanceState == null) {
-            postponeEnterTransition()
-        }
-        return view
+        savedInstanceState?.let { enterFullScreen(activity) }
+        return inflater.inflate(R.layout.fragment_image, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

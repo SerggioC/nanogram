@@ -1,15 +1,15 @@
 package com.sergiocruz.nanogram.ui.main
 
+import android.content.Context
+import android.graphics.Matrix
+import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.GONE
-import android.view.View.VISIBLE
 import android.view.ViewGroup
-import android.view.WindowManager
 import androidx.annotation.RequiresApi
-import androidx.appcompat.widget.Toolbar
 import androidx.core.app.SharedElementCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -19,6 +19,7 @@ import androidx.viewpager.widget.ViewPager
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.adapter.ImagePagerAdapter
 import com.sergiocruz.nanogram.ui.main.MainActivity.Companion.currentPosition
+import com.sergiocruz.nanogram.util.enterFullScreen
 import kotlinx.android.synthetic.main.fragment_viewpager.*
 import timber.log.Timber
 
@@ -43,7 +44,6 @@ class DetailsViewPagerFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        enterFullScreen()
 
         if (arguments != null && arguments!!.containsKey(ARG_ITEM_INDEX)) {
             listIndex = arguments!!.getInt(ARG_ITEM_INDEX)
@@ -97,24 +97,15 @@ class DetailsViewPagerFragment : Fragment() {
         //viewpager.currentItem = listIndex
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+//        exitFullScreen(activity)
+    }
+
     override fun onDetach() {
-        exitFullScreen()
         super.onDetach()
     }
 
-    private fun enterFullScreen() {
-        val decorView = activity?.window?.decorView
-        decorView?.findViewById<Toolbar>(R.id.action_bar)?.visibility = GONE
-        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN)
-    }
-
-    private fun exitFullScreen() {
-        val decorView = activity?.window?.decorView
-        decorView?.findViewById<Toolbar>(R.id.action_bar)?.visibility = VISIBLE
-        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN)
-        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-    }
 
     /** Prepares the shared element transition from and back to the grid fragment.*/
     @RequiresApi(Build.VERSION_CODES.KITKAT)
@@ -125,10 +116,62 @@ class DetailsViewPagerFragment : Fragment() {
 
         // A similar mapping is set at the ArticleListFragment with a setExitSharedElementCallback.
         setEnterSharedElementCallback(object : SharedElementCallback() {
-            override fun onMapSharedElements(
-                names: List<String>,
-                sharedElements: MutableMap<String, View>
+            override fun onRejectSharedElements(rejectedSharedElements: MutableList<View>?) {
+                Timber.w("on reject")
+                super.onRejectSharedElements(rejectedSharedElements)
+            }
+
+            override fun onSharedElementEnd(
+                sharedElementNames: MutableList<String>?,
+                sharedElements: MutableList<View>?,
+                sharedElementSnapshots: MutableList<View>?
             ) {
+                Timber.d("on end")
+                super.onSharedElementEnd(sharedElementNames, sharedElements, sharedElementSnapshots)
+            }
+
+            override fun onCaptureSharedElementSnapshot(
+                sharedElement: View?,
+                viewToGlobalMatrix: Matrix?,
+                screenBounds: RectF?
+            ): Parcelable {
+                Timber.d("on capture")
+                return super.onCaptureSharedElementSnapshot(
+                    sharedElement,
+                    viewToGlobalMatrix,
+                    screenBounds
+                )
+            }
+
+            override fun onSharedElementsArrived(
+                sharedElementNames: MutableList<String>?,
+                sharedElements: MutableList<View>?,
+                listener: OnSharedElementsReadyListener?
+            ) {
+                Timber.d("arrived")
+                super.onSharedElementsArrived(sharedElementNames, sharedElements, listener)
+            }
+
+            override fun onCreateSnapshotView(context: Context?, snapshot: Parcelable?): View {
+                Timber.d("create snapshotview")
+                return super.onCreateSnapshotView(context, snapshot)
+            }
+
+            override fun onSharedElementStart(
+                sharedElementNames: MutableList<String>?,
+                sharedElements: MutableList<View>?,
+                sharedElementSnapshots: MutableList<View>?
+            ) {
+                Timber.d("on shared element start")
+                enterFullScreen(activity)
+                super.onSharedElementStart(
+                    sharedElementNames,
+                    sharedElements,
+                    sharedElementSnapshots
+                )
+            }
+
+            override fun onMapSharedElements(names: List<String>, sharedElements: MutableMap<String, View>) {
                 // Locate the image view at the primary fragment (the ImageFragment that is currently
                 // visible). To locate the fragment, call instantiateItem with the selection position.
                 // At this stage, the method will simply return the fragment at the position and will
