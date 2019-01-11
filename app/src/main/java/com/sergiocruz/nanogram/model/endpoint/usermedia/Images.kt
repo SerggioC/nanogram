@@ -4,7 +4,6 @@ import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 
 data class Images(
-
     @SerializedName("low_resolution")
     @Expose
     var lowResolution: Resolution? = null,
@@ -14,5 +13,4 @@ data class Images(
     @SerializedName("standard_resolution")
     @Expose
     var standardResolution: Resolution? = null
-
 )

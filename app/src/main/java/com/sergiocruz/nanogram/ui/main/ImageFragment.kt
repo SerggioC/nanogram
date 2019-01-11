@@ -19,6 +19,7 @@ import com.bumptech.glide.request.target.Target
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
 import kotlinx.android.synthetic.main.fragment_image.*
+import timber.log.Timber
 
 
 class ImageFragment : Fragment() {
@@ -69,10 +70,12 @@ class ImageFragment : Fragment() {
         comments.text = imageVar?.comments?.count?.toString() ?: ""
         caption.text = imageVar?.caption?.text ?: ""
 
-        val url = imageVar?.images?.thumbnail?.url
+        val url = imageVar?.images?.standardResolution?.url
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            imageview.transitionName = url
+            val hash = url.hashCode().toString()
+            imageview.transitionName = hash
+            Timber.i("setup views hashcode $hash position: $listIndex")
         }
 
         Glide.with(this.context!!)

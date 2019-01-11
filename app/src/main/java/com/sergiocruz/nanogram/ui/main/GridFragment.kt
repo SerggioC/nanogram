@@ -6,7 +6,6 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.preference.PreferenceManager
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,11 +22,10 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.transition.TransitionInflater
 import com.sergiocruz.nanogram.BuildConfig
 import com.sergiocruz.nanogram.R
-import com.sergiocruz.nanogram.adapter.GridAdapter
-import com.sergiocruz.nanogram.adapter.MyItemDecoration
+import com.sergiocruz.nanogram.adapter.GridImageAdapter
 import com.sergiocruz.nanogram.model.RedirectResult
 import com.sergiocruz.nanogram.model.Token
-import com.sergiocruz.nanogram.retrofit.InstagramApiControler
+import com.sergiocruz.nanogram.retrofit.AppApiController
 import com.sergiocruz.nanogram.service.getInstagramUrl
 import com.sergiocruz.nanogram.service.getRedirectUri
 import com.sergiocruz.nanogram.util.InfoLevel.ERROR
@@ -35,14 +33,14 @@ import com.sergiocruz.nanogram.util.encode
 import com.sergiocruz.nanogram.util.hasSavedToken
 import com.sergiocruz.nanogram.util.showToast
 import kotlinx.android.synthetic.main.grid_fragment.*
-import kotlinx.android.synthetic.main.image_item_layout.*
-import kotlinx.android.synthetic.main.image_item_layout.view.*
+import kotlinx.android.synthetic.main.item_image_layout.view.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import timber.log.Timber
 
 class GridFragment : Fragment(),
-    //GridImageAdapter.ImageClickListener,
+    GridImageAdapter.ImageClickListener,
     AutenticationWebViewClient.RedirectCallback {
 
     companion object {
@@ -50,8 +48,8 @@ class GridFragment : Fragment(),
     }
 
     private lateinit var viewModel: MainViewModel
-    //private lateinit var gridImageAdapter: GridImageAdapter
-    private lateinit var gridAdapter: GridAdapter
+    private lateinit var gridImageAdapter: GridImageAdapter
+    //private lateinit var gridAdapter: GridAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.grid_fragment, container, false)
@@ -82,6 +80,7 @@ class GridFragment : Fragment(),
                 oldRight: Int,
                 oldBottom: Int
             ) {
+                Timber.i("MainActivity.currentPosition = ${MainActivity.currentPosition}")
                 images_recyclerview.removeOnLayoutChangeListener(this)
                 val layoutManager = images_recyclerview.layoutManager
                 val viewAtPosition =
@@ -96,23 +95,24 @@ class GridFragment : Fragment(),
     }
 
     private fun initializeRecyclerView() {
-        //gridImageAdapter = GridImageAdapter(this, this)
-        gridAdapter = GridAdapter(this)
-        gridAdapter.setHasStableIds(true)
+        gridImageAdapter = GridImageAdapter(this, this)
+        gridImageAdapter.setHasStableIds(true)
+//        gridAdapter = GridAdapter(this)
+//        gridAdapter.setHasStableIds(true)
         images_recyclerview?.layoutManager =
                 StaggeredGridLayoutManager(resources.getInteger(R.integer.span_count), VERTICAL)
         images_recyclerview?.setHasFixedSize(false)
-        images_recyclerview?.addItemDecoration(MyItemDecoration(10))
-        //images_recyclerview?.adapter = gridImageAdapter
-        images_recyclerview?.adapter = gridAdapter
+        //images_recyclerview?.addItemDecoration(MyItemDecoration(1))
+        images_recyclerview?.adapter = gridImageAdapter
+//        images_recyclerview?.adapter = gridAdapter
         initializeViewModel()
     }
 
     private fun initializeViewModel() {
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
         viewModel.getUserMedia(this.context!!).observe(this, Observer {
-            //gridImageAdapter.swap(it)
-            gridAdapter.swap(it)
+            gridImageAdapter.swap(it)
+//            gridAdapter.swap(it)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 prepareExitTransitions()
                 postponeEnterTransition()
@@ -138,6 +138,7 @@ class GridFragment : Fragment(),
         alertDialog = AlertDialog.Builder(this.context!!)
             .setView(getAuthWebView())
             .create()
+        // show software input keyboard
         alertDialog.setOnShowListener {
             alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
             alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
@@ -165,10 +166,10 @@ class GridFragment : Fragment(),
     }
 
     private fun getAccessToken(accessCode: String) {
-        Log.i("Sergio> ", "accessCode is: $accessCode")
+        Timber.i("accessCode is: $accessCode")
 
-        val apiController = InstagramApiControler().apiController
-        apiController?.getAcessCode(
+        val apiController = AppApiController().apiController
+        apiController?.getAccessCode(
             BuildConfig.ClientId,
             BuildConfig.ClientSecret,
             "authorization_code",
@@ -178,20 +179,19 @@ class GridFragment : Fragment(),
             override fun onResponse(call: Call<Token>, response: Response<Token>) {
                 if (response.isSuccessful) {
                     val token = response.body()?.token
-                    Log.i("Sergio> ", "response token= $token")
-                    Log.i("Sergio> ", "getting user media")
+                    Timber.i("response token= $token")
+                    Timber.i("getting user media")
                     token?.let { saveToken(token) }
                     initializeRecyclerView()
                 } else {
-                    Log.i(
-                        "Sergio> ",
+                    Timber.i(
                         "Wrong response= $call ${response.errorBody()}"
                     )
                 }
             }
 
             override fun onFailure(call: Call<Token>, t: Throwable) {
-                Log.i("Sergio> ", "fail on api call " + call.toString())
+                Timber.i("fail on api call ${call.toString()}")
             }
 
         })
@@ -241,38 +241,46 @@ class GridFragment : Fragment(),
                         ?: return
 
                 // Map the first shared element name to the child ImageView.
-                sharedElements[names[0]] = selectedViewHolder.itemView.item_image
+                val name = selectedViewHolder.itemView.item_image
+                sharedElements[names[0]] = name
+                Timber.i("on exit onMap name: $name")
             }
         })
     }
 
-//    override fun onImageClicked(adapterPosition: Int) {
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//            gotoImageDetailsTransition(adapterPosition)
-//        } else {
-//            gotoImageDetails(adapterPosition)
-//        }
-//    }
+    override fun onImageClicked(adapterPosition: Int, view: View) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            gotoImageDetailsTransition(adapterPosition, view)
+        } else {
+            gotoImageDetails(adapterPosition)
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun gotoImageDetailsTransition(index: Int) {
-        //(this.exitTransition as TransitionSet).excludeTarget(view, true)
+    private fun gotoImageDetailsTransition(index: Int, view: View) {
+//        (this.exitTransition as TransitionSet).excludeTarget(view, true)
+
+        Timber.i("onImage clicked: position: $index hash name: ${view.transitionName} ")
 
         fragmentManager
             ?.beginTransaction()
             ?.setReorderingAllowed(true) // Optimize for shared element transition.
-            ?.addSharedElement(item_image, item_image.transitionName)
-            ?.add(R.id.container, DetailsViewPagerFragment.newInstance(index))
+            ?.addSharedElement(view, view.transitionName)
+            ?.replace(
+                R.id.container,
+                DetailsViewPagerFragment.newInstance(index),
+                DetailsViewPagerFragment::class.java.simpleName
+            )
             ?.addToBackStack(null)
             ?.commit()
 
-        Log.i("Sergio> ", "exitTransition: $exitTransition")
+        Timber.i("exitTransition: $exitTransition")
     }
 
     private fun gotoImageDetails(index: Int) {
         fragmentManager
             ?.beginTransaction()
-            ?.add(R.id.container, DetailsViewPagerFragment.newInstance(index))
+            ?.replace(R.id.container, DetailsViewPagerFragment.newInstance(index))
             ?.addToBackStack(null)
             ?.commit()
     }

@@ -2,9 +2,9 @@ package com.sergiocruz.nanogram
 
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import timber.log.Timber
 
 private const val PERMISSION_REQUESTS_CODE = 1
 
@@ -52,9 +52,6 @@ fun getRuntimePermissions(activity: Activity) {
 fun isPermissionGranted(permission: String, activity: Activity): Boolean {
     val granted = ContextCompat.checkSelfPermission(activity, permission) ==
             PackageManager.PERMISSION_GRANTED
-    Log.i(
-        "Sergio> Sergio>",
-        "Permission $permission ${if (granted) "granted" else "NOT granted"}"
-    )
+    Timber.i("Permission $permission ${if (granted) "granted" else "NOT granted"}")
     return granted
 }

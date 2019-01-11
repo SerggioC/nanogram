@@ -1,18 +1,14 @@
 package com.sergiocruz.nanogram.retrofit;
 
-import android.util.Log;
-
-import org.json.JSONException;
-
 import java.io.IOException;
 
 import okhttp3.Interceptor;
 import okhttp3.Request;
+import timber.log.Timber;
 
 public class CustomResponseInterceptor implements Interceptor {
 
     private static String newToken;
-    private String bodyString;
 
     private final String TAG = getClass().getSimpleName();
 
@@ -22,12 +18,12 @@ public class CustomResponseInterceptor implements Interceptor {
         if (response.code() != 200) {
             return makeTokenRefreshCall(request, chain);
         }
-        Log.d(TAG, "INTERCEPTED: " + response.toString());
+        Timber.d(TAG, "INTERCEPTED: " + response);
         return response;
     }
 
     private okhttp3.Response makeTokenRefreshCall(Request req, Interceptor.Chain chain) throws IOException {
-        Log.d(TAG, "Retrying new request");
+        Timber.d(TAG, "Retrying new request");
         /* fetch refreshed token, some synchronous API call, whatever */
         String newToken = fetchToken();
         /* make a new request which is same as the original one, except that its headers now contain a refreshed token */

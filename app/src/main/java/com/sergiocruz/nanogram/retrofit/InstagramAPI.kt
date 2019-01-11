@@ -4,6 +4,7 @@ import com.sergiocruz.nanogram.model.Token
 import com.sergiocruz.nanogram.model.endpoint.comments.InstagramApiResponseComments
 import com.sergiocruz.nanogram.model.endpoint.usermedia.ApiResponseMedia
 import com.sergiocruz.nanogram.model.endpoint.userself.InstagramApiResponseSelf
+import io.reactivex.Observable
 import retrofit2.Call
 import retrofit2.http.*
 
@@ -43,7 +44,7 @@ interface InstagramAPI {
      */
     @POST("https://api.instagram.com/oauth/access_token")
     @FormUrlEncoded
-    fun getAcessCode(
+    fun getAccessCode(
         @Field("client_id") clientId: String,
         @Field("client_secret") clientSecret: String,
         @Field("grant_type") grantType: String,
@@ -64,16 +65,14 @@ interface InstagramAPI {
     ): Call<ApiResponseMedia>
 
     @GET("https://api.instagram.com/v1/users/self/media/recent/")
-    fun getUserMedia(
-        @Query("access_token") token: String
-    ): Call<ApiResponseMedia>
+    fun getUserMedia(@Query("access_token") token: String): Observable<ApiResponseMedia>
 
     @GET("{api_root_url}media/{media-id}/comments")
     fun getCommentsForMediaId(
         @Path("api_root_url") root: String,
         @Path("media-id") mediaId: String,
         @Query("access_token") token: String
-    ): Call<InstagramApiResponseComments>
+    ): Observable<InstagramApiResponseComments>
 
 
 }

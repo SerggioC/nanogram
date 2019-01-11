@@ -1,13 +1,14 @@
 package com.sergiocruz.nanogram.adapter
 
+import android.annotation.SuppressLint
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
@@ -19,16 +20,15 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
-import com.sergiocruz.nanogram.ui.main.GridFragment
 import com.sergiocruz.nanogram.ui.main.MainActivity
 import com.sergiocruz.nanogram.util.animateItemViewSlideFromBottom
-import kotlinx.android.synthetic.main.image_item_layout.view.*
+import kotlinx.android.synthetic.main.item_image_layout.view.*
+import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.random.Random
 
 class GridImageAdapter(
     private val imageClickListener: ImageClickListener,
-    private val gridFragment: GridFragment
+    private val gridFragment: Fragment
 ) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -48,18 +48,27 @@ class GridImageAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.image_item_layout, parent, false)
+            .inflate(R.layout.item_image_layout, parent, false)
         return ItemImageViewHolder(view)
     }
 
+    override fun getItemId(position: Int) = position.toLong()
+
+    override fun getItemViewType(position: Int) = position
+
+    @SuppressLint("LogNotTimber")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val image: ImageVar? = imageList?.get(position)
         holder as ItemImageViewHolder
 
-        val url = image?.images?.thumbnail?.url
+        val url = image?.images?.standardResolution?.url
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-            holder.imageView.transitionName = url
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val hash = url.hashCode().toString()
+            holder.imageView.transitionName = hash
+            Timber.i("onBind hashcode $hash position: $position")
+
+        }
 
         Glide.with(holder.imageView.context)
             .load(url)
@@ -78,16 +87,17 @@ class GridImageAdapter(
                         return false
                     }
                     gridFragment.startPostponedEnterTransition()
-                    target.getSize { width, height ->
-                        // Change images height randomly by 15%
-                        if (Random.nextBoolean()) {
-                            holder.imageView.layoutParams.height = (height * 1.15).toInt()
-                            holder.imageView.layoutParams.width = WRAP_CONTENT
-                            holder.itemView.layoutParams.height = WRAP_CONTENT
-                            holder.itemView.layoutParams.width = WRAP_CONTENT
-                        }
 
-                    }
+//                    target.getSize { width, height ->
+                        // Change images height randomly by 15%
+//                        if (Random.nextBoolean()) {
+//                            holder.imageView.layoutParams.width = (height * 1.15).toInt()
+//                            holder.imageView.layoutParams.height = (height * 1.15).toInt()
+//
+//                            holder.imageView.layoutParams.height = WRAP_CONTENT
+//                            holder.imageView.layoutParams.width = WRAP_CONTENT
+//                        }
+//                    }
                     return false
                 }
 
@@ -116,7 +126,8 @@ class GridImageAdapter(
 
     interface ImageClickListener {
         fun onImageClicked(
-            adapterPosition: Int
+            adapterPosition: Int,
+            view: View
         )
     }
 
@@ -127,8 +138,8 @@ class GridImageAdapter(
         internal val comments: TextView = itemView.comments
 
         init {
-            imageView.setOnClickListener {
-                imageClickListener.onImageClicked(adapterPosition)
+            imageView.setOnClickListener { view ->
+                imageClickListener.onImageClicked(adapterPosition, view)
             }
         }
     }

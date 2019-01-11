@@ -34,7 +34,7 @@ import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
 import com.sergiocruz.nanogram.ui.main.DetailsViewPagerFragment
 import com.sergiocruz.nanogram.ui.main.MainActivity
-import kotlinx.android.synthetic.main.image_item_layout.view.*
+import kotlinx.android.synthetic.main.item_image_layout.view.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 class GridAdapter(fragment: Fragment) : RecyclerView.Adapter<GridAdapter.ImageViewHolder>() {
@@ -44,11 +44,11 @@ class GridAdapter(fragment: Fragment) : RecyclerView.Adapter<GridAdapter.ImageVi
         this.viewHolderListener = ViewHolderListenerImpl(fragment)
     }
 
-    var imageList: MutableList<ImageVar>? = null
+    private var imageList: MutableList<ImageVar>? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImageViewHolder {
         val view =
-            LayoutInflater.from(parent.context).inflate(R.layout.image_item_layout, parent, false)
+            LayoutInflater.from(parent.context).inflate(R.layout.item_image_layout, parent, false)
         return ImageViewHolder(view, viewHolderListener)
     }
 
@@ -114,9 +114,9 @@ class GridAdapter(fragment: Fragment) : RecyclerView.Adapter<GridAdapter.ImageVi
         ViewHolderListener {
         private val enterTransitionStarted: AtomicBoolean = AtomicBoolean()
 
-        override fun onLoadCompleted(view: ImageView, position: Int) {
+        override fun onLoadCompleted(view: ImageView, adapterPosition: Int) {
             // Call startPostponedEnterTransition only when the 'selected' imageView loading is completed.
-            if (MainActivity.currentPosition != position) {
+            if (MainActivity.currentPosition != adapterPosition) {
                 return
             }
             if (enterTransitionStarted.getAndSet(true)) {
@@ -132,11 +132,11 @@ class GridAdapter(fragment: Fragment) : RecyclerView.Adapter<GridAdapter.ImageVi
          *
          * @param view the clicked [ImageView] (the shared element view will be re-mapped at the
          * GridFragment's SharedElementCallback)
-         * @param position the selected view position
+         * @param adapterPosition the selected view position
          */
-        override fun onItemClicked(view: View, position: Int) {
+        override fun onItemClicked(view: View, adapterPosition: Int) {
             // Update the position.
-            MainActivity.currentPosition = position
+            MainActivity.currentPosition = adapterPosition
 
             // Exclude the clicked card from the exit transition (e.g. the card will disappear immediately
             // instead of fading out with the rest to prevent an overlapping animation of fade and move).
@@ -151,7 +151,7 @@ class GridAdapter(fragment: Fragment) : RecyclerView.Adapter<GridAdapter.ImageVi
                     .addSharedElement(transitioningView, transitioningView.transitionName)
                     .replace(
                         R.id.container,
-                        DetailsViewPagerFragment.newInstance(position),
+                        DetailsViewPagerFragment.newInstance(adapterPosition),
                         DetailsViewPagerFragment::class.java.simpleName
                     )
                     .addToBackStack(null)
@@ -160,7 +160,7 @@ class GridAdapter(fragment: Fragment) : RecyclerView.Adapter<GridAdapter.ImageVi
                 transaction
                     .replace(
                         R.id.container,
-                        DetailsViewPagerFragment.newInstance(position),
+                        DetailsViewPagerFragment.newInstance(adapterPosition),
                         DetailsViewPagerFragment::class.java.simpleName
                     )
                     .addToBackStack(null)

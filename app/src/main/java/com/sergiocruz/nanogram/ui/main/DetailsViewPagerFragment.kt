@@ -20,6 +20,7 @@ import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.adapter.ImagePagerAdapter
 import com.sergiocruz.nanogram.ui.main.MainActivity.Companion.currentPosition
 import kotlinx.android.synthetic.main.fragment_viewpager.*
+import timber.log.Timber
 
 class DetailsViewPagerFragment : Fragment() {
     companion object {
@@ -55,8 +56,8 @@ class DetailsViewPagerFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
         viewModel.getUserMedia(this.context!!).observe(this, Observer {
-            setupViewPager(savedInstanceState)
-            imagePagerAdapter.swap(it.size)
+            setupViewPager()
+            imagePagerAdapter.setSize(it.size)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 prepareEnterSharedElementTransition()
                 // Avoid a postponeEnterTransition on orientation change, and postpone only of first creation.
@@ -68,9 +69,10 @@ class DetailsViewPagerFragment : Fragment() {
         })
     }
 
-    private fun setupViewPager(savedInstanceState: Bundle?) {
+    private fun setupViewPager() {
         imagePagerAdapter = ImagePagerAdapter(this, listIndex)
         view_pager.adapter = imagePagerAdapter
+        view_pager.offscreenPageLimit = 1
         // Transformation animation on page switch
         view_pager.setPageTransformer(true, ZoomOutPageTransformer())
         view_pager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
@@ -92,12 +94,12 @@ class DetailsViewPagerFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        //view_pager.currentItem = listIndex
+        //viewpager.currentItem = listIndex
     }
 
     override fun onDetach() {
-        super.onDetach()
         exitFullScreen()
+        super.onDetach()
     }
 
     private fun enterFullScreen() {
@@ -138,9 +140,11 @@ class DetailsViewPagerFragment : Fragment() {
                 val view = currentFragment.view ?: return
 
                 // Map the first shared element name to the child ImageView.
-                sharedElements[names[0]] = view.findViewById(R.id.imageview)
+                val name = view.findViewById<View>(R.id.imageview)
+                sharedElements[names[0]] = name
+                Timber.i("on ENTER onMap name: $name")
+
             }
         })
     }
 }
-
