@@ -94,7 +94,6 @@ class GridFragment : Fragment(),
                 oldRight: Int,
                 oldBottom: Int
             ) {
-                Timber.i("MainActivity.currentPosition = ${MainActivity.currentPosition}")
                 images_recyclerview.removeOnLayoutChangeListener(this)
 //                val layoutManager = images_recyclerview.layoutManager
                 val viewAtPosition =
@@ -274,6 +273,7 @@ class GridFragment : Fragment(),
                 Timber.i("onexitonMapname: ${name.transitionName}}")
             }
         })
+
     }
 
     override fun onImageClicked(adapterPosition: Int, view: View) {

@@ -87,21 +87,6 @@ class DetailsViewPagerFragment : Fragment() {
         this.arguments = arguments
     }
 
-    override fun onResume() {
-        super.onResume()
-        //viewpager.currentItem = listIndex
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-//        exitFullScreen(activity)
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-    }
-
-
     /** Prepares the shared element transition from and back to the grid fragment.*/
     @RequiresApi(Build.VERSION_CODES.KITKAT)
     private fun prepareEnterSharedElementTransition() {

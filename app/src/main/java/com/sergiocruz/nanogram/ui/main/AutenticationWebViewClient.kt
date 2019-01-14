@@ -34,7 +34,13 @@ class AutenticationWebViewClient(private val onRedirectCallback: RedirectCallbac
         return RedirectResult(code, error, errorReason, errorDescription)
     }
 
+    override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+        if (url?.contains("code=") == true) {
+            onRedirectCallback.onRedirect(getRedirectResult(Uri.parse(url)))
+            return true
+        }
+        return false
 
-
+    }
 }
 
