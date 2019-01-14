@@ -6,7 +6,6 @@ import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.allPermissionsGranted
 import com.sergiocruz.nanogram.getRuntimePermissions
 import com.sergiocruz.nanogram.util.TimberImplementation
-import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,9 +31,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        Timber.i("Testing the wood! ;)")
-        //supportFragmentManager.fragments[1]?.onDetach()
-    }
 }
