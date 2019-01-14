@@ -17,9 +17,10 @@ import androidx.core.app.SharedElementCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.LinearLayoutManager.VERTICAL
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager.VERTICAL
 import androidx.transition.TransitionInflater
+import androidx.transition.TransitionSet
 import com.sergiocruz.nanogram.BuildConfig
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.adapter.GridImageAdapter
@@ -50,7 +51,9 @@ class GridFragment : Fragment(),
 
     private lateinit var viewModel: MainViewModel
     private lateinit var gridImageAdapter: GridImageAdapter
-    //private lateinit var gridAdapter: GridAdapter
+    private lateinit var layoutManager: StaggeredGridLayoutManager
+    //private lateinit var layoutManager: GridLayoutManager
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -69,7 +72,8 @@ class GridFragment : Fragment(),
         } else {
             loadInstagramWebView()
         }
-        scrollToPosition()
+
+
     }
 
     override fun onResume() {
@@ -92,36 +96,40 @@ class GridFragment : Fragment(),
             ) {
                 Timber.i("MainActivity.currentPosition = ${MainActivity.currentPosition}")
                 images_recyclerview.removeOnLayoutChangeListener(this)
-                val layoutManager = images_recyclerview.layoutManager
+//                val layoutManager = images_recyclerview.layoutManager
                 val viewAtPosition =
-                    layoutManager!!.findViewByPosition(MainActivity.currentPosition)
+                    layoutManager?.findViewByPosition(MainActivity.currentPosition)
                 // Scroll to position if the view for the current position is null
                 // (not currently part of layout manager children), or it's not completely visible.
-//                if (viewAtPosition == null || layoutManager.isViewPartiallyVisible(
-//                        viewAtPosition,
-//                        false,
-//                        true
-//                    )
-//                ) {
+                if (viewAtPosition == null || layoutManager.isViewPartiallyVisible(
+                        viewAtPosition,
+                        false,
+                        true
+                    )
+                ) {
                     images_recyclerview.post {
                         layoutManager.scrollToPosition(MainActivity.currentPosition)
-//                    }
+                    }
                 }
             }
         })
     }
 
+
     private fun initializeRecyclerView() {
+        layoutManager =
+                StaggeredGridLayoutManager(resources.getInteger(R.integer.span_count), VERTICAL)
+
+        images_recyclerview.recycledViewPool.setMaxRecycledViews(0, 0)
+
+        images_recyclerview?.layoutManager = layoutManager
+        images_recyclerview?.setHasFixedSize(false)
+
+        //images_recyclerview?.addItemDecoration(MyItemDecoration(1))
         gridImageAdapter = GridImageAdapter(this, this)
         gridImageAdapter.setHasStableIds(true)
-//        gridAdapter = GridAdapter(this)
-//        gridAdapter.setHasStableIds(true)
-        images_recyclerview?.layoutManager =
-                StaggeredGridLayoutManager(resources.getInteger(R.integer.span_count), VERTICAL)
-        images_recyclerview?.setHasFixedSize(false)
-        //images_recyclerview?.addItemDecoration(MyItemDecoration(1))
         images_recyclerview?.adapter = gridImageAdapter
-//        images_recyclerview?.adapter = gridAdapter
+
         initializeViewModel()
     }
 
@@ -129,12 +137,12 @@ class GridFragment : Fragment(),
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
         viewModel.getUserMedia(this.context!!).observe(this, Observer {
             gridImageAdapter.swap(it)
-//            gridAdapter.swap(it)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 prepareExitTransitions()
                 postponeEnterTransition()
             }
             showProgress(false)
+            scrollToPosition()
         })
     }
 
@@ -155,7 +163,7 @@ class GridFragment : Fragment(),
         alertDialog = AlertDialog.Builder(this.context!!)
             .setView(getAuthWebView())
             .create()
-        // show software input keyboard
+        // show software input keyboard for alert dialog
         alertDialog.setOnShowListener {
             alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
             alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
@@ -208,7 +216,7 @@ class GridFragment : Fragment(),
             }
 
             override fun onFailure(call: Call<Token>, t: Throwable) {
-                Timber.i("fail on api call ${call.toString()}")
+                Timber.i("fail on api call $call")
             }
 
         })
@@ -244,7 +252,6 @@ class GridFragment : Fragment(),
      * as well as the other transitions that affect the flow. */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun prepareExitTransitions() {
-        Timber.d("Preparing transitions")
         exitTransition = TransitionInflater.from(activity)
             .inflateTransition(R.transition.grid_exit_transition)
             .setDuration(resources.getInteger(R.integer.transition_duration).toLong())
@@ -264,12 +271,13 @@ class GridFragment : Fragment(),
                 // Map the first shared element name to the child ImageView.
                 val name = selectedViewHolder.itemView.item_image
                 sharedElements[names[0]] = name
-                Timber.i("onexitonMapname: ${name.hashCode()}")
+                Timber.i("onexitonMapname: ${name.transitionName}}")
             }
         })
     }
 
     override fun onImageClicked(adapterPosition: Int, view: View) {
+        MainActivity.currentPosition = adapterPosition
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             gotoImageDetailsTransition(adapterPosition, view)
         } else {
@@ -279,9 +287,9 @@ class GridFragment : Fragment(),
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun gotoImageDetailsTransition(index: Int, view: View) {
-//        (this.exitTransition as TransitionSet).excludeTarget(view, true)
+        (this.exitTransition as TransitionSet).excludeTarget(view, true)
 
-        Timber.i("onImage clicked: position: $index hash name: ${view.transitionName} ")
+        Timber.i("onImage clicked: position: $index")
 
         fragmentManager
             ?.beginTransaction()
@@ -294,8 +302,6 @@ class GridFragment : Fragment(),
             )
             ?.addToBackStack(null)
             ?.commit()
-
-        Timber.i("exitTransition: $exitTransition")
     }
 
     private fun gotoImageDetails(index: Int) {

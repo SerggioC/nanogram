@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.REPLACE
 import androidx.room.Query
+import androidx.room.Transaction
 import com.sergiocruz.nanogram.model.ImageVar
 
 @Dao
@@ -26,5 +27,12 @@ interface DatabaseDao {
 
     @Insert(onConflict = REPLACE)
     fun saveAll(list:MutableList<ImageVar>)
+
+    @Transaction
+    fun clearAndInsert(list: MutableList<ImageVar>){
+        deleteTable()
+        saveAll(list)
+    }
+
 
 }

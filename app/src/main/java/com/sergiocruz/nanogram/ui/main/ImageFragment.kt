@@ -20,7 +20,6 @@ import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
 import com.sergiocruz.nanogram.util.enterFullScreen
 import kotlinx.android.synthetic.main.fragment_image.*
-import timber.log.Timber
 
 
 class ImageFragment : Fragment() {
@@ -39,6 +38,12 @@ class ImageFragment : Fragment() {
 
     private lateinit var viewModel: MainViewModel
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+    }
+
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -55,6 +60,7 @@ class ImageFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
         setupViews(viewModel.getImageVarForIndex(listIndex, this.context!!))
     }
@@ -68,14 +74,12 @@ class ImageFragment : Fragment() {
         val url = imageVar?.images?.standardResolution?.url
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val hash = url.hashCode().toString()
-            imageview.transitionName = hash
-            Timber.i("setup views hashcode $hash position: $listIndex")
+            imageview.transitionName = url.hashCode().toString()
         }
 
         Glide.with(this.context!!)
             .load(url)
-            .listener(object: RequestListener<Drawable?> {
+            .listener(object : RequestListener<Drawable?> {
                 override fun onResourceReady(
                     resource: Drawable?,
                     model: Any?,

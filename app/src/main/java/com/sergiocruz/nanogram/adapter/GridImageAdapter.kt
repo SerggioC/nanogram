@@ -1,6 +1,5 @@
 package com.sergiocruz.nanogram.adapter
 
-import android.annotation.SuppressLint
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.LayoutInflater
@@ -12,7 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.DiskCacheStrategy.AUTOMATIC
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade
 import com.bumptech.glide.request.RequestListener
@@ -21,9 +20,8 @@ import com.bumptech.glide.request.target.Target
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
 import com.sergiocruz.nanogram.ui.main.MainActivity
-import com.sergiocruz.nanogram.util.animateItemViewSlideFromBottom
+import com.sergiocruz.nanogram.util.SlideItemsFromBottom
 import kotlinx.android.synthetic.main.item_image_layout.view.*
-import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
 
 class GridImageAdapter(
@@ -41,8 +39,10 @@ class GridImageAdapter(
 
     fun swap(data: MutableList<ImageVar>) {
         data.let {
-            this.imageList = data
-            notifyDataSetChanged()
+            if (this.imageList != data) {
+                this.imageList = data
+                notifyDataSetChanged()
+            }
         }
     }
 
@@ -54,9 +54,6 @@ class GridImageAdapter(
 
     override fun getItemId(position: Int) = position.toLong()
 
-    override fun getItemViewType(position: Int) = position
-
-    @SuppressLint("LogNotTimber")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val image: ImageVar? = imageList?.get(position)
         holder as ItemImageViewHolder
@@ -64,20 +61,26 @@ class GridImageAdapter(
         val url = image?.images?.standardResolution?.url
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val hash = url.hashCode().toString()
-            holder.imageView.transitionName = hash
-            Timber.i("onBind hashcode $hash position: $position")
-
+            holder.imageView.transitionName = url.hashCode().toString()
         }
 
         Glide.with(holder.imageView.context)
             .load(url)
-            .listener(object : RequestListener<Drawable> {
+            .addListener(object : RequestListener<Drawable?> {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable?>?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    return false
+                }
+
                 override fun onResourceReady(
-                    resource: Drawable,
-                    model: Any,
-                    target: Target<Drawable>,
-                    dataSource: DataSource,
+                    resource: Drawable?,
+                    model: Any?,
+                    target: Target<Drawable?>?,
+                    dataSource: DataSource?,
                     isFirstResource: Boolean
                 ): Boolean {
                     if (MainActivity.currentPosition != position) {
@@ -87,32 +90,15 @@ class GridImageAdapter(
                         return false
                     }
                     gridFragment.startPostponedEnterTransition()
-
-//                    target.getSize { width, height ->
-                        // Change images height randomly by 15%
-//                        if (Random.nextBoolean()) {
-//                            holder.imageView.layoutParams.width = (height * 1.15).toInt()
-//                            holder.imageView.layoutParams.height = (height * 1.15).toInt()
-//
-//                            holder.imageView.layoutParams.height = WRAP_CONTENT
-//                            holder.imageView.layoutParams.width = WRAP_CONTENT
-//                        }
-//                    }
                     return false
                 }
-
-                override fun onLoadFailed(
-                    e: GlideException?,
-                    model: Any,
-                    target: Target<Drawable>,
-                    isFirstResource: Boolean
-                ) = false
             })
-            .transition(withCrossFade())
+            .transition(withCrossFade(400))
             .apply(
                 RequestOptions()
+//                    .centerCrop()
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                     .error(R.mipmap.ic_launcher)
-                    .diskCacheStrategy(AUTOMATIC)
             )
             .into(holder.imageView)
 
@@ -120,7 +106,7 @@ class GridImageAdapter(
         holder.likes.text = image?.likes?.count.toString()
         holder.comments.text = image?.comments?.count.toString()
 
-        animateItemViewSlideFromBottom(holder.itemView, (50 * position).toLong())
+        SlideItemsFromBottom(holder.itemView, (20 * position).toLong())
 
     }
 
@@ -138,8 +124,8 @@ class GridImageAdapter(
         internal val comments: TextView = itemView.comments
 
         init {
-            imageView.setOnClickListener { view ->
-                imageClickListener.onImageClicked(adapterPosition, view)
+            imageView.setOnClickListener {
+                imageClickListener.onImageClicked(adapterPosition, it)
             }
         }
     }

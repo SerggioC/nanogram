@@ -14,7 +14,6 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.util.InfoLevel.*
-import timber.log.Timber
 
 enum class InfoLevel {
     INFO, CONFIRM, WARNING, ERROR
@@ -57,7 +56,7 @@ fun showToast(
     theCustomToast.show()
 }
 
-fun animateItemViewSlideFromBottom(viewToAnimate: View, timeOffSet: Long) {
+fun SlideItemsFromBottom(viewToAnimate: View, timeOffSet: Long) {
     val bottomAnimation = AnimationUtils.loadAnimation(
         viewToAnimate.context,
         R.anim.item_animation_slide_from_bottom
@@ -68,7 +67,6 @@ fun animateItemViewSlideFromBottom(viewToAnimate: View, timeOffSet: Long) {
 
 
 fun enterFullScreen(activity: Activity?) {
-    Timber.d("Entering FullScreen")
     val decorView = activity?.window?.decorView
     decorView?.findViewById<Toolbar>(R.id.action_bar)?.visibility = View.GONE
     activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
@@ -76,7 +74,6 @@ fun enterFullScreen(activity: Activity?) {
 }
 
 fun exitFullScreen(activity: Activity?) {
-    Timber.d("Exiting FullScreen")
     val decorView = activity?.window?.decorView
     decorView?.findViewById<Toolbar>(R.id.action_bar)?.visibility = View.VISIBLE
     activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN)

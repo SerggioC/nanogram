@@ -58,7 +58,7 @@ class GridAdapter(fragment: Fragment) : RecyclerView.Adapter<GridAdapter.ImageVi
 
         // Set the string value of the imageView resource as the unique transition name for the view
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            holder.imageView.transitionName = url
+            holder.imageView.transitionName = url.hashCode().toString()
         }
 
         Glide.with(holder.itemView.context)

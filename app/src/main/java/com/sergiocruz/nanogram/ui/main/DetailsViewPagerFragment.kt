@@ -1,11 +1,7 @@
 package com.sergiocruz.nanogram.ui.main
 
-import android.content.Context
-import android.graphics.Matrix
-import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
-import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,7 +14,6 @@ import androidx.transition.TransitionInflater
 import androidx.viewpager.widget.ViewPager
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.adapter.ImagePagerAdapter
-import com.sergiocruz.nanogram.ui.main.MainActivity.Companion.currentPosition
 import com.sergiocruz.nanogram.util.enterFullScreen
 import kotlinx.android.synthetic.main.fragment_viewpager.*
 import timber.log.Timber
@@ -78,7 +73,7 @@ class DetailsViewPagerFragment : Fragment() {
         view_pager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
             override fun onPageSelected(position: Int) {
                 listIndex = position
-                currentPosition = position
+                MainActivity.currentPosition = position
             }
         })
     }
@@ -116,53 +111,11 @@ class DetailsViewPagerFragment : Fragment() {
 
         // A similar mapping is set at the ArticleListFragment with a setExitSharedElementCallback.
         setEnterSharedElementCallback(object : SharedElementCallback() {
-            override fun onRejectSharedElements(rejectedSharedElements: MutableList<View>?) {
-                Timber.w("on reject")
-                super.onRejectSharedElements(rejectedSharedElements)
-            }
-
-            override fun onSharedElementEnd(
-                sharedElementNames: MutableList<String>?,
-                sharedElements: MutableList<View>?,
-                sharedElementSnapshots: MutableList<View>?
-            ) {
-                Timber.d("on end")
-                super.onSharedElementEnd(sharedElementNames, sharedElements, sharedElementSnapshots)
-            }
-
-            override fun onCaptureSharedElementSnapshot(
-                sharedElement: View?,
-                viewToGlobalMatrix: Matrix?,
-                screenBounds: RectF?
-            ): Parcelable {
-                Timber.d("on capture")
-                return super.onCaptureSharedElementSnapshot(
-                    sharedElement,
-                    viewToGlobalMatrix,
-                    screenBounds
-                )
-            }
-
-            override fun onSharedElementsArrived(
-                sharedElementNames: MutableList<String>?,
-                sharedElements: MutableList<View>?,
-                listener: OnSharedElementsReadyListener?
-            ) {
-                Timber.d("arrived")
-                super.onSharedElementsArrived(sharedElementNames, sharedElements, listener)
-            }
-
-            override fun onCreateSnapshotView(context: Context?, snapshot: Parcelable?): View {
-                Timber.d("create snapshotview")
-                return super.onCreateSnapshotView(context, snapshot)
-            }
-
             override fun onSharedElementStart(
                 sharedElementNames: MutableList<String>?,
                 sharedElements: MutableList<View>?,
                 sharedElementSnapshots: MutableList<View>?
             ) {
-                Timber.d("on shared element start")
                 enterFullScreen(activity)
                 super.onSharedElementStart(
                     sharedElementNames,
@@ -170,8 +123,10 @@ class DetailsViewPagerFragment : Fragment() {
                     sharedElementSnapshots
                 )
             }
-
-            override fun onMapSharedElements(names: List<String>, sharedElements: MutableMap<String, View>) {
+            override fun onMapSharedElements(
+                names: List<String>,
+                sharedElements: MutableMap<String, View>
+            ) {
                 // Locate the image view at the primary fragment (the ImageFragment that is currently
                 // visible). To locate the fragment, call instantiateItem with the selection position.
                 // At this stage, the method will simply return the fragment at the position and will
@@ -185,8 +140,7 @@ class DetailsViewPagerFragment : Fragment() {
                 // Map the first shared element name to the child ImageView.
                 val name = view.findViewById<View>(R.id.imageview)
                 sharedElements[names[0]] = name
-                Timber.i("on ENTER onMap name: $name")
-
+                Timber.i(":On Map shared element name: ${name.transitionName}")
             }
         })
     }

@@ -53,8 +53,8 @@ class ImageVarLiveData(context: Context) : MutableLiveData<MutableList<ImageVar>
     }
 
     private fun saveToLocalDatabase(data: MutableList<ImageVar>, context: Context) {
-        Timber.d("saving data to local db on thread ${Thread.currentThread().name}")
-        AppDatabase.getDatabase(context).databaseDao().saveAll(data)
+        Timber.d("Clearing DB and saving data on thread ${Thread.currentThread().name}")
+        AppDatabase.getDatabase(context).databaseDao().clearAndInsert(data)
     }
 
     /** Extract the ImageVar list from InstagramMediaData response */
