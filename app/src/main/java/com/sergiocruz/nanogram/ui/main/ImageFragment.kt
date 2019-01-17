@@ -19,6 +19,7 @@ import com.bumptech.glide.request.target.Target
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
 import com.sergiocruz.nanogram.util.enterFullScreen
+import com.sergiocruz.nanogram.util.toggle
 import kotlinx.android.synthetic.main.fragment_image.*
 
 
@@ -38,12 +39,6 @@ class ImageFragment : Fragment() {
 
     private lateinit var viewModel: MainViewModel
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-    }
-
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -54,7 +49,9 @@ class ImageFragment : Fragment() {
                 listIndex = arguments!!.getInt(ARG_ITEM_INDEX)
             }
         }
-        savedInstanceState?.let { enterFullScreen(activity) }
+        savedInstanceState?.let {
+            enterFullScreen(activity)
+        }
         return inflater.inflate(R.layout.fragment_image, container, false)
     }
 
@@ -62,7 +59,10 @@ class ImageFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
+
         setupViews(viewModel.getImageVarForIndex(listIndex, this.context!!))
+        //setupViews(mockdata[listIndex])
+
     }
 
     // Can be used with databinding in the XML
@@ -109,16 +109,14 @@ class ImageFragment : Fragment() {
             )
             .into(imageview)
 
-        root_item_layout.setOnClickListener {
+        imageview.setOnClickListener {
             likes.toggle()
             comments.toggle()
             caption.toggle()
         }
     }
 
-    private fun View.toggle() {
-        visibility = if (visibility == View.VISIBLE) View.GONE else View.VISIBLE
-    }
+
 
 
 }

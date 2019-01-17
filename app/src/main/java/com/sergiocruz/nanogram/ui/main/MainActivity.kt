@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
             TimberImplementation.init()
 
             supportFragmentManager.beginTransaction()
-                .replace(R.id.container, GridFragment.newInstance())
+                .replace(R.id.container, GridFragment())
                 .commitNow()
             if (!allPermissionsGranted(this)) getRuntimePermissions(this)
         } else {

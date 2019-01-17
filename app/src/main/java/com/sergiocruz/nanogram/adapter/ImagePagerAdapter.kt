@@ -5,7 +5,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentStatePagerAdapter
 import com.sergiocruz.nanogram.ui.main.ImageFragment
 
-open class ImagePagerAdapter(fragment: Fragment, private var index: Int) :
+open class ImagePagerAdapter(fragment: Fragment) :
     FragmentStatePagerAdapter(fragment.childFragmentManager) {
 
     private var dataSize: Int? = null

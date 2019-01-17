@@ -2,6 +2,7 @@ package com.sergiocruz.nanogram.util
 
 import android.app.Activity
 import android.content.Context
+import android.util.DisplayMetrics
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -78,4 +79,14 @@ fun exitFullScreen(activity: Activity?) {
     decorView?.findViewById<Toolbar>(R.id.action_bar)?.visibility = View.VISIBLE
     activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN)
     activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+}
+
+fun View.toggle() {
+    visibility = if (visibility == View.VISIBLE) View.GONE else View.VISIBLE
+}
+
+fun getImageWidth(activity: Activity): Int {
+    val displayMetrics = DisplayMetrics()
+    activity.windowManager.defaultDisplay.getMetrics(displayMetrics)
+    return displayMetrics.widthPixels / (activity.resources.getInteger(R.integer.span_count))
 }

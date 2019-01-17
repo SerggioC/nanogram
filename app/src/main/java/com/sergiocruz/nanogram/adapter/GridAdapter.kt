@@ -25,6 +25,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.TransitionSet
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
@@ -143,15 +144,15 @@ class GridAdapter(fragment: Fragment) : RecyclerView.Adapter<GridAdapter.ImageVi
 
             val transaction = fragment.fragmentManager!!.beginTransaction()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//                (fragment.exitTransition as TransitionSet).excludeTarget(view, true)
-//
+                (fragment.exitTransition as TransitionSet).excludeTarget(view, true)
+
                 val transitioningView = view.item_image
                 transaction
                     .setReorderingAllowed(true) // Optimize for shared element transition
                     .addSharedElement(transitioningView, transitioningView.transitionName)
                     .replace(
                         R.id.container,
-                        DetailsViewPagerFragment.newInstance(adapterPosition),
+                        DetailsViewPagerFragment(),
                         DetailsViewPagerFragment::class.java.simpleName
                     )
                     .addToBackStack(null)
@@ -160,7 +161,7 @@ class GridAdapter(fragment: Fragment) : RecyclerView.Adapter<GridAdapter.ImageVi
                 transaction
                     .replace(
                         R.id.container,
-                        DetailsViewPagerFragment.newInstance(adapterPosition),
+                        DetailsViewPagerFragment(),
                         DetailsViewPagerFragment::class.java.simpleName
                     )
                     .addToBackStack(null)

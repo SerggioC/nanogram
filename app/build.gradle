@@ -51,13 +51,15 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
 
     // annotation processor for kotlin
-    kapt "androidx.databinding:databinding-compiler:$databindingCompiler"
+    //kapt "androidx.databinding:databinding-compiler:$databindingCompiler"
+    // databinding lib injected by gradle.
 
     // ReactiveStreams support for LiveData
     implementation "androidx.lifecycle:lifecycle-reactivestreams-ktx:$lifecycle_version"
     // -ktx for Kotlin
 
     // Test helpers for LiveData
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     testImplementation "androidx.arch.core:core-testing:$lifecycle_version"
 
     testImplementation 'androidx.test.ext:junit:1.1.0'
@@ -84,5 +86,10 @@ dependencies {
 
     implementation 'com.google.dagger:dagger:2.20'
     kapt 'com.google.dagger:dagger-compiler:2.20'
+
+    def nav_version = "1.0.0-alpha09"
+
+    implementation "android.arch.navigation:navigation-fragment-ktx:$nav_version" // use -ktx for Kotlin
+    implementation "android.arch.navigation:navigation-ui-ktx:$nav_version" // use -ktx for Kotlin
 
 }

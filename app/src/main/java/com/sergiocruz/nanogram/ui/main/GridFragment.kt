@@ -3,6 +3,7 @@ package com.sergiocruz.nanogram.ui.main
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.os.Build
 import android.os.Bundle
 import android.preference.PreferenceManager
@@ -11,12 +12,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.WebView
+import android.widget.ProgressBar
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.SharedElementCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager.VERTICAL
 import androidx.transition.TransitionInflater
@@ -29,12 +32,10 @@ import com.sergiocruz.nanogram.model.Token
 import com.sergiocruz.nanogram.retrofit.AppApiController
 import com.sergiocruz.nanogram.service.getInstagramUrl
 import com.sergiocruz.nanogram.service.getRedirectUri
+import com.sergiocruz.nanogram.util.*
 import com.sergiocruz.nanogram.util.InfoLevel.ERROR
-import com.sergiocruz.nanogram.util.encode
-import com.sergiocruz.nanogram.util.exitFullScreen
-import com.sergiocruz.nanogram.util.hasSavedToken
-import com.sergiocruz.nanogram.util.showToast
 import kotlinx.android.synthetic.main.grid_fragment.*
+import kotlinx.android.synthetic.main.grid_fragment.view.*
 import kotlinx.android.synthetic.main.item_image_layout.view.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -45,40 +46,79 @@ class GridFragment : Fragment(),
     GridImageAdapter.ImageClickListener,
     AutenticationWebViewClient.RedirectCallback {
 
-    companion object {
-        fun newInstance() = GridFragment()
-    }
+    private var recyclerView: RecyclerView? = null
 
     private lateinit var viewModel: MainViewModel
     private lateinit var gridImageAdapter: GridImageAdapter
-    private lateinit var layoutManager: StaggeredGridLayoutManager
-    //private lateinit var layoutManager: GridLayoutManager
-
+    //private lateinit var layoutManager: StaggeredGridLayoutManager
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return inflater.inflate(R.layout.grid_fragment, container, false)
-    }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+        val rootView = inflater.inflate(R.layout.grid_fragment, container, false)
 
-        showProgress(true)
+        recyclerView = rootView.images_recyclerview
+
+        showProgress(true, rootView.login_progress)
         if (hasSavedToken(this.context!!)) {
-            initializeRecyclerView()
+            initializeRecyclerView(recyclerView)
         } else {
             loadInstagramWebView()
         }
 
+        return rootView
+    }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        scrollToPosition()
     }
 
     override fun onResume() {
         super.onResume()
         exitFullScreen(activity)
+    }
+
+    private fun initializeRecyclerView(images_recyclerview: RecyclerView?) {
+        // Defined in XML
+        val layoutManager = StaggeredGridLayoutManager(resources.getInteger(R.integer.span_count), VERTICAL)
+        images_recyclerview?.layoutManager = layoutManager
+        images_recyclerview?.setHasFixedSize(false)
+        //images_recyclerview?.addItemDecoration(MyItemDecoration(1))
+
+        gridImageAdapter = GridImageAdapter(this, this, getImageWidth(this.activity as Activity))
+        gridImageAdapter.setHasStableIds(true)
+        images_recyclerview?.adapter = gridImageAdapter
+
+        initializeViewModel()
+//        initializeMock()
+    }
+
+    private fun initializeMock() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            prepareExitTransitions()
+            postponeEnterTransition()
+        }
+        //showProgress(false, login_progress)
+
+
+    }
+
+    private fun initializeViewModel() {
+        viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
+        viewModel.getUserMedia(this.context!!).observe(this, Observer {
+            gridImageAdapter.swap(it)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                prepareExitTransitions()
+                postponeEnterTransition()
+            }
+            showProgress(false, login_progress)
+            scrollToPosition()
+        })
     }
 
     private fun scrollToPosition() {
@@ -95,53 +135,20 @@ class GridFragment : Fragment(),
                 oldBottom: Int
             ) {
                 images_recyclerview.removeOnLayoutChangeListener(this)
-//                val layoutManager = images_recyclerview.layoutManager
+
+                val layoutManager = recyclerView?.layoutManager
                 val viewAtPosition =
                     layoutManager?.findViewByPosition(MainActivity.currentPosition)
+
                 // Scroll to position if the view for the current position is null
                 // (not currently part of layout manager children), or it's not completely visible.
-                if (viewAtPosition == null || layoutManager.isViewPartiallyVisible(
-                        viewAtPosition,
-                        false,
-                        true
-                    )
-                ) {
+                if (viewAtPosition == null || layoutManager.isViewPartiallyVisible(viewAtPosition, false, true)) {
                     images_recyclerview.post {
-                        layoutManager.scrollToPosition(MainActivity.currentPosition)
+                        layoutManager?.scrollToPosition(MainActivity.currentPosition)
                     }
                 }
+
             }
-        })
-    }
-
-
-    private fun initializeRecyclerView() {
-        layoutManager =
-                StaggeredGridLayoutManager(resources.getInteger(R.integer.span_count), VERTICAL)
-
-        images_recyclerview.recycledViewPool.setMaxRecycledViews(0, 0)
-
-        images_recyclerview?.layoutManager = layoutManager
-        images_recyclerview?.setHasFixedSize(false)
-
-        //images_recyclerview?.addItemDecoration(MyItemDecoration(1))
-        gridImageAdapter = GridImageAdapter(this, this)
-        gridImageAdapter.setHasStableIds(true)
-        images_recyclerview?.adapter = gridImageAdapter
-
-        initializeViewModel()
-    }
-
-    private fun initializeViewModel() {
-        viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
-        viewModel.getUserMedia(this.context!!).observe(this, Observer {
-            gridImageAdapter.swap(it)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                prepareExitTransitions()
-                postponeEnterTransition()
-            }
-            showProgress(false)
-            scrollToPosition()
         })
     }
 
@@ -172,7 +179,7 @@ class GridFragment : Fragment(),
 
     override fun onRedirect(result: RedirectResult) {
         alertDialog.dismiss()
-        showProgress(false)
+        showProgress(false, login_progress)
 
         if (!result.code.isNullOrEmpty()) {
             getAccessToken(result.code)
@@ -206,7 +213,7 @@ class GridFragment : Fragment(),
                     Timber.i("response token= $token")
                     Timber.i("getting user media")
                     token?.let { saveToken(token) }
-                    initializeRecyclerView()
+                    initializeRecyclerView(images_recyclerview)
                 } else {
                     Timber.i(
                         "Wrong response= $call ${response.errorBody()}"
@@ -228,7 +235,7 @@ class GridFragment : Fragment(),
     }
 
     /** Shows the progress UI */
-    private fun showProgress(show: Boolean) {
+    private fun showProgress(show: Boolean, login_progress: ProgressBar) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
         // for very easy animations. If available, use these APIs to fade-in
         // the progress spinner.
@@ -256,28 +263,35 @@ class GridFragment : Fragment(),
             .setDuration(resources.getInteger(R.integer.transition_duration).toLong())
 
         // A similar mapping is set at the ImageFragment with a setEnterSharedElementCallback.
-        setExitSharedElementCallback(object : SharedElementCallback() {
-            override fun onMapSharedElements(
-                names: List<String>,
-                sharedElements: MutableMap<String, View>
-            ) {
-                super.onMapSharedElements(names, sharedElements)
-                // Locate the ViewHolder for the clicked position.
-                val selectedViewHolder =
-                    images_recyclerview.findViewHolderForAdapterPosition(MainActivity.currentPosition)
-                        ?: return
+        setExitSharedElementCallback(
+            object : SharedElementCallback() {
+                override fun onMapSharedElements(
+                    names: List<String>,
+                    sharedElements: MutableMap<String, View>
+                ) {
+                    Timber.d("entering onmapsharedelements MainActivity.currentPosition = ${MainActivity.currentPosition}")
 
-                // Map the first shared element name to the child ImageView.
-                val name = selectedViewHolder.itemView.item_image
-                sharedElements[names[0]] = name
-                Timber.i("onexitonMapname: ${name.transitionName}}")
-            }
-        })
+                    // Locate the ViewHolder for the clicked position.
+                    val selectedViewHolder =
+                        recyclerView?.findViewHolderForAdapterPosition(MainActivity.currentPosition)
+                    if (selectedViewHolder == null) return
+
+
+//                val imageVar = viewModel.getImageVarForIndex(MainActivity.currentPosition, context!!)
+//                val transitionName = imageVar.images?.standardResolution.hashCode().toString()
+
+                    // Map the first shared element name to the child ImageView.
+                    val name = selectedViewHolder.itemView.item_image
+                    sharedElements[names[0]] = name
+                    Timber.i("onexitonMapname transition Name= ${name.transitionName}}")
+                }
+            })
 
     }
 
     override fun onImageClicked(adapterPosition: Int, view: View) {
         MainActivity.currentPosition = adapterPosition
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             gotoImageDetailsTransition(adapterPosition, view)
         } else {
@@ -287,7 +301,8 @@ class GridFragment : Fragment(),
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun gotoImageDetailsTransition(index: Int, view: View) {
-        (this.exitTransition as TransitionSet).excludeTarget(view, true)
+
+        (exitTransition as TransitionSet).excludeTarget(view, true)
 
         Timber.i("onImage clicked: position: $index")
 
@@ -297,7 +312,7 @@ class GridFragment : Fragment(),
             ?.addSharedElement(view, view.transitionName)
             ?.replace(
                 R.id.container,
-                DetailsViewPagerFragment.newInstance(index),
+                DetailsViewPagerFragment(),
                 DetailsViewPagerFragment::class.java.simpleName
             )
             ?.addToBackStack(null)
@@ -307,7 +322,7 @@ class GridFragment : Fragment(),
     private fun gotoImageDetails(index: Int) {
         fragmentManager
             ?.beginTransaction()
-            ?.replace(R.id.container, DetailsViewPagerFragment.newInstance(index))
+            ?.replace(R.id.container, DetailsViewPagerFragment())
             ?.addToBackStack(null)
             ?.commit()
     }
