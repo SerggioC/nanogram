@@ -21,12 +21,7 @@ enum class InfoLevel {
 }
 
 //fun showCustomToast(context: Context, toastText: String, icon_RID: Int, text_color_Res_Id: Int, duration: Int? = Toast.LENGTH_LONG) {
-fun showToast(
-    context: Context?,
-    toastText: String,
-    level: InfoLevel,
-    duration: Int = Toast.LENGTH_LONG
-) {
+fun showToast(context: Context?, toastText: String, level: InfoLevel = INFO, duration: Int = Toast.LENGTH_LONG) {
     val inflater = context?.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
     if (inflater == null) {
         Toast.makeText(context, toastText, duration).show()
@@ -57,7 +52,7 @@ fun showToast(
     theCustomToast.show()
 }
 
-fun SlideItemsFromBottom(viewToAnimate: View, timeOffSet: Long) {
+fun slideItemsFromBottom(viewToAnimate: View, timeOffSet: Long) {
     val bottomAnimation = AnimationUtils.loadAnimation(
         viewToAnimate.context,
         R.anim.item_animation_slide_from_bottom
@@ -85,6 +80,7 @@ fun View.toggle() {
     visibility = if (visibility == View.VISIBLE) View.GONE else View.VISIBLE
 }
 
+/** Returns optimal image with based on screen size and desired span count for the recyclerview */
 fun getImageWidth(activity: Activity): Int {
     val displayMetrics = DisplayMetrics()
     activity.windowManager.defaultDisplay.getMetrics(displayMetrics)

@@ -1,11 +1,24 @@
 package com.sergiocruz.nanogram.ui.main
 
+import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.LinearLayout
+import android.widget.PopupWindow
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.allPermissionsGranted
 import com.sergiocruz.nanogram.getRuntimePermissions
+import com.sergiocruz.nanogram.repository.Repository
 import com.sergiocruz.nanogram.util.TimberImplementation
+import com.sergiocruz.nanogram.util.deleteToken
+import com.sergiocruz.nanogram.util.hasSavedToken
+import kotlinx.android.synthetic.main.main_activity.*
+import kotlinx.android.synthetic.main.popup_window_settings.view.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,5 +43,53 @@ class MainActivity : AppCompatActivity() {
             return
         }
     }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        if (item?.itemId == R.id.action_settings) openSettingsPopup()
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun openSettingsPopup() {
+        // inflate the layout of the popup window
+        val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val popupView = inflater.inflate(R.layout.popup_window_settings, null)
+
+        // create the popup window
+        val width = LinearLayout.LayoutParams.WRAP_CONTENT
+        val height = LinearLayout.LayoutParams.WRAP_CONTENT
+        val popupWindow = PopupWindow(popupView, width, height, true)
+        popupView.isFocusable = true // let taps outside the popup also dismiss it
+        popupWindow.isOutsideTouchable = true
+
+        popupWindow.animationStyle = R.style.PopupWindowAnimationStyle
+
+        // https://material.io/design/environment/elevation.html#default-elevations
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            popupWindow.elevation = resources.getDimension(R.dimen.popup_window_elevation)
+        }
+
+        // show the popup window
+        // which view you pass in doesn't matter, it is only used for the window token
+        popupWindow.showAtLocation(container, Gravity.CENTER, 0, 0)
+
+        if (hasSavedToken(this)) {
+            Repository.getUserInfo(this).observe(this, Observer {
+                popupView.status.append(getString(R.string.currently_logged) + " " + it.fullName)
+            })
+        }
+
+        popupView.logout.setOnClickListener {
+            deleteToken(this)
+            finish()
+        }
+
+
+    }
+
 
 }

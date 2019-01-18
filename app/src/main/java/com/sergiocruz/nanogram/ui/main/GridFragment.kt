@@ -6,7 +6,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Build
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -84,7 +83,8 @@ class GridFragment : Fragment(),
 
     private fun initializeRecyclerView(images_recyclerview: RecyclerView?) {
         // Defined in XML
-        val layoutManager = StaggeredGridLayoutManager(resources.getInteger(R.integer.span_count), VERTICAL)
+        val layoutManager =
+            StaggeredGridLayoutManager(resources.getInteger(R.integer.span_count), VERTICAL)
         images_recyclerview?.layoutManager = layoutManager
         images_recyclerview?.setHasFixedSize(false)
         //images_recyclerview?.addItemDecoration(MyItemDecoration(1))
@@ -142,7 +142,12 @@ class GridFragment : Fragment(),
 
                 // Scroll to position if the view for the current position is null
                 // (not currently part of layout manager children), or it's not completely visible.
-                if (viewAtPosition == null || layoutManager.isViewPartiallyVisible(viewAtPosition, false, true)) {
+                if (viewAtPosition == null || layoutManager.isViewPartiallyVisible(
+                        viewAtPosition,
+                        false,
+                        true
+                    )
+                ) {
                     images_recyclerview.post {
                         layoutManager?.scrollToPosition(MainActivity.currentPosition)
                     }
@@ -174,10 +179,15 @@ class GridFragment : Fragment(),
             alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
             alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
         }
+        alertDialog.setOnDismissListener {
+            // when onbackpressed and not authorized
+            if (!authorized) getOut()
+        }
         alertDialog.show()
     }
 
     override fun onRedirect(result: RedirectResult) {
+        authorized = true
         alertDialog.dismiss()
         showProgress(false, login_progress)
 
@@ -196,6 +206,8 @@ class GridFragment : Fragment(),
         }
     }
 
+    private var authorized: Boolean = false
+
     private fun getAccessToken(accessCode: String) {
         Timber.i("accessCode is: $accessCode")
 
@@ -212,7 +224,7 @@ class GridFragment : Fragment(),
                     val token = response.body()?.token
                     Timber.i("response token= $token")
                     Timber.i("getting user media")
-                    token?.let { saveToken(token) }
+                    token?.let { saveToken(context!!, token) }
                     initializeRecyclerView(images_recyclerview)
                 } else {
                     Timber.i(
@@ -226,12 +238,6 @@ class GridFragment : Fragment(),
             }
 
         })
-    }
-
-    internal fun saveToken(token: String) {
-        val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this.context).edit()
-        val encoded = encode(token)
-        sharedPrefs.putString(getString(R.string.user_token), encoded).apply()
     }
 
     /** Shows the progress UI */

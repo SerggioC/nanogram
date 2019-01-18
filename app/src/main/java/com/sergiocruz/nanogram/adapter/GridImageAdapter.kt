@@ -22,7 +22,7 @@ import com.bumptech.glide.request.target.Target
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.ImageVar
 import com.sergiocruz.nanogram.ui.main.MainActivity
-import com.sergiocruz.nanogram.util.SlideItemsFromBottom
+import com.sergiocruz.nanogram.util.slideItemsFromBottom
 import kotlinx.android.synthetic.main.item_image_layout.view.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.random.Random
@@ -119,7 +119,7 @@ class GridImageAdapter(
         holder.likes.text = image?.likes?.count.toString()
         holder.comments.text = image?.comments?.count.toString()
 
-        SlideItemsFromBottom(holder.itemView, (50 * position).toLong())
+        slideItemsFromBottom(holder.itemView, (50 * position).toLong())
 
     }
 

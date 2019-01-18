@@ -11,7 +11,7 @@ import com.sergiocruz.nanogram.database.typeconverters.ImagesTypeConverter
 import com.sergiocruz.nanogram.database.typeconverters.LikesTypeConverter
 import com.sergiocruz.nanogram.model.ImageVar
 
-@Database(entities = [ImageVar::class], version = 1)
+@Database(entities = [ImageVar::class], version = 1, exportSchema = false)
 @TypeConverters(
     ImagesTypeConverter::class,
     LikesTypeConverter::class,

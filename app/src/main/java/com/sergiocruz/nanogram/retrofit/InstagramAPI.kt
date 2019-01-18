@@ -52,20 +52,18 @@ interface InstagramAPI {
         @Field("code") code: String
     ): Call<Token>
 
-    @GET("{api_root_url}users/self/?access_token={token}")
-    fun getUserInfo(
-        @Path("api_root_url") root: String,
-        @Path("token") token: String
-    ): Call<InstagramApiResponseSelf>
+    /** query appended to url with ?access_token=token */
+    @GET("https://api.instagram.com/v1/users/self/")
+    fun getUserInfo(@Query("access_token") token: String): Observable<InstagramApiResponseSelf>
+
+    @GET("https://api.instagram.com/v1/users/self/media/recent/")
+    fun getUserMedia(@Query("access_token") token: String): Observable<ApiResponseMedia>
 
     @GET("{api_root_url}users/self/media/recent/")
     fun getUserMedia1(
         @Path("api_root_url") root: String,
         @Query("access_token") token: String
     ): Call<ApiResponseMedia>
-
-    @GET("https://api.instagram.com/v1/users/self/media/recent/")
-    fun getUserMedia(@Query("access_token") token: String): Observable<ApiResponseMedia>
 
     @GET("{api_root_url}media/{media-id}/comments")
     fun getCommentsForMediaId(
