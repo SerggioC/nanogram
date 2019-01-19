@@ -11,14 +11,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.WebView
-import android.widget.ProgressBar
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.SharedElementCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager.VERTICAL
 import androidx.transition.TransitionInflater
@@ -34,7 +32,6 @@ import com.sergiocruz.nanogram.service.getRedirectUri
 import com.sergiocruz.nanogram.util.*
 import com.sergiocruz.nanogram.util.InfoLevel.ERROR
 import kotlinx.android.synthetic.main.grid_fragment.*
-import kotlinx.android.synthetic.main.grid_fragment.view.*
 import kotlinx.android.synthetic.main.item_image_layout.view.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -45,34 +42,27 @@ class GridFragment : Fragment(),
     GridImageAdapter.ImageClickListener,
     AutenticationWebViewClient.RedirectCallback {
 
-    private var recyclerView: RecyclerView? = null
-
     private lateinit var viewModel: MainViewModel
     private lateinit var gridImageAdapter: GridImageAdapter
-    //private lateinit var layoutManager: StaggeredGridLayoutManager
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
-        val rootView = inflater.inflate(R.layout.grid_fragment, container, false)
-
-        recyclerView = rootView.images_recyclerview
-
-        showProgress(true, rootView.login_progress)
-        if (hasSavedToken(this.context!!)) {
-            initializeRecyclerView(recyclerView)
-        } else {
-            loadInstagramWebView()
-        }
-
-        return rootView
+        return inflater.inflate(R.layout.grid_fragment, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        showProgress(true)
+        if (hasSavedToken(this.context!!)) {
+            initializeRecyclerView()
+        } else {
+            loadInstagramWebView()
+        }
+
         scrollToPosition()
     }
 
@@ -81,7 +71,7 @@ class GridFragment : Fragment(),
         exitFullScreen(activity)
     }
 
-    private fun initializeRecyclerView(images_recyclerview: RecyclerView?) {
+    private fun initializeRecyclerView() {
         // Defined in XML
         val layoutManager =
             StaggeredGridLayoutManager(resources.getInteger(R.integer.span_count), VERTICAL)
@@ -94,29 +84,18 @@ class GridFragment : Fragment(),
         images_recyclerview?.adapter = gridImageAdapter
 
         initializeViewModel()
-//        initializeMock()
-    }
-
-    private fun initializeMock() {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            prepareExitTransitions()
-            postponeEnterTransition()
-        }
-        //showProgress(false, login_progress)
-
 
     }
 
     private fun initializeViewModel() {
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
-        viewModel.getUserMedia(this.context!!).observe(this, Observer {
+        viewModel.getUserMedia().observe(this, Observer {
             gridImageAdapter.swap(it)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 prepareExitTransitions()
                 postponeEnterTransition()
             }
-            showProgress(false, login_progress)
+            showProgress(false)
             scrollToPosition()
         })
     }
@@ -136,7 +115,7 @@ class GridFragment : Fragment(),
             ) {
                 images_recyclerview.removeOnLayoutChangeListener(this)
 
-                val layoutManager = recyclerView?.layoutManager
+                val layoutManager = images_recyclerview?.layoutManager
                 val viewAtPosition =
                     layoutManager?.findViewByPosition(MainActivity.currentPosition)
 
@@ -189,7 +168,7 @@ class GridFragment : Fragment(),
     override fun onRedirect(result: RedirectResult) {
         authorized = true
         alertDialog.dismiss()
-        showProgress(false, login_progress)
+        showProgress(false)
 
         if (!result.code.isNullOrEmpty()) {
             getAccessToken(result.code)
@@ -211,37 +190,37 @@ class GridFragment : Fragment(),
     private fun getAccessToken(accessCode: String) {
         Timber.i("accessCode is: $accessCode")
 
-        val apiController = AppApiController().apiController
-        apiController?.getAccessCode(
-            BuildConfig.ClientId,
-            BuildConfig.ClientSecret,
-            "authorization_code",
-            getRedirectUri(this.context!!),
-            accessCode
-        )?.enqueue(object : Callback<Token> {
-            override fun onResponse(call: Call<Token>, response: Response<Token>) {
-                if (response.isSuccessful) {
-                    val token = response.body()?.token
-                    Timber.i("response token= $token")
-                    Timber.i("getting user media")
-                    token?.let { saveToken(context!!, token) }
-                    initializeRecyclerView(images_recyclerview)
-                } else {
-                    Timber.i(
-                        "Wrong response= $call ${response.errorBody()}"
-                    )
+        AppApiController.apiController
+            ?.getAccessCode(
+                BuildConfig.ClientId,
+                BuildConfig.ClientSecret,
+                "authorization_code",
+                getRedirectUri(this.context!!),
+                accessCode
+            )?.enqueue(object : Callback<Token> {
+                override fun onResponse(call: Call<Token>, response: Response<Token>) {
+                    if (response.isSuccessful) {
+                        val token = response.body()?.token
+                        Timber.i("response token= $token")
+                        Timber.i("getting user media")
+                        token?.let { saveToken(context!!, token) }
+                        initializeRecyclerView()
+                    } else {
+                        Timber.i(
+                            "Wrong response= $call ${response.errorBody()}"
+                        )
+                    }
                 }
-            }
 
-            override fun onFailure(call: Call<Token>, t: Throwable) {
-                Timber.i("fail on api call $call")
-            }
+                override fun onFailure(call: Call<Token>, t: Throwable) {
+                    Timber.i("fail on api call $call")
+                }
 
-        })
+            })
     }
 
     /** Shows the progress UI */
-    private fun showProgress(show: Boolean, login_progress: ProgressBar) {
+    private fun showProgress(show: Boolean) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
         // for very easy animations. If available, use these APIs to fade-in
         // the progress spinner.
@@ -279,7 +258,7 @@ class GridFragment : Fragment(),
 
                     // Locate the ViewHolder for the clicked position.
                     val selectedViewHolder =
-                        recyclerView?.findViewHolderForAdapterPosition(MainActivity.currentPosition)
+                        images_recyclerview?.findViewHolderForAdapterPosition(MainActivity.currentPosition)
                     if (selectedViewHolder == null) return
 
 

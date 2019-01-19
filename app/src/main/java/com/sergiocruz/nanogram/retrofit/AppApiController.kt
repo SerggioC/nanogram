@@ -9,7 +9,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 /**
  * Get data using retrofit and serialize automatically with GSON
  */
-class AppApiController {
+
+object AppApiController {
     private var instagramAPI: InstagramAPI? = null
 
     val apiController: InstagramAPI?

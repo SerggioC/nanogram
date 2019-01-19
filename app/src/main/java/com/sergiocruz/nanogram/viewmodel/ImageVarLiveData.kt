@@ -1,13 +1,11 @@
 package com.sergiocruz.nanogram.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import com.sergiocruz.nanogram.database.AppDatabase
 import com.sergiocruz.nanogram.model.ImageVar
 import com.sergiocruz.nanogram.model.endpoint.usermedia.ApiResponseMedia
 import com.sergiocruz.nanogram.model.endpoint.usermedia.InstagramMediaData
 import com.sergiocruz.nanogram.retrofit.AppApiController
-import com.sergiocruz.nanogram.util.getSavedToken
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -15,15 +13,14 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 
-class ImageVarLiveData(context: Context) : MutableLiveData<MutableList<ImageVar>>() {
-    private val apiController = AppApiController().apiController
+class ImageVarLiveData(userToken: String, var database: AppDatabase) : MutableLiveData<MutableList<ImageVar>>() {
 
     private var disposable: Disposable? =
-        apiController
-            ?.getUserMedia(getSavedToken(context))
+        AppApiController.apiController
+            ?.getUserMedia(userToken)
             ?.onErrorResumeNext { observer: Observer<in ApiResponseMedia> ->
                 Timber.e("gotcha! error on thread ${getThread()}, resuming")
-                this.postValue(getDataFromLocalDatabase(context))
+                this.postValue(getDataFromLocalDatabase())
             }
             ?.subscribeOn(Schedulers.io())
             ?.flatMap { result: ApiResponseMedia ->
@@ -33,7 +30,7 @@ class ImageVarLiveData(context: Context) : MutableLiveData<MutableList<ImageVar>
                     //.subscribeOn(Schedulers.computation())
                     .doOnNext { data: MutableList<ImageVar> ->
                         Timber.w("saving to database on thread ${getThread()} data size: ${data.size}")
-                        saveToLocalDatabase(data, context)
+                        saveToLocalDatabase(data)
                     }
             }
             ?.observeOn(AndroidSchedulers.mainThread())
@@ -42,24 +39,20 @@ class ImageVarLiveData(context: Context) : MutableLiveData<MutableList<ImageVar>
                 this.value = parsedResponse
             }
 
-
     private fun getThread() = Thread.currentThread().name
 
-    private fun getDataFromLocalDatabase(context: Context): MutableList<ImageVar>? {
-
-
+    private fun getDataFromLocalDatabase(): MutableList<ImageVar>? {
         Timber.d("getting data from local db on thread ${Thread.currentThread().name}")
-        return AppDatabase.getDatabase(context).databaseDao().getAllPosts
+        return database.databaseDao().getAllPosts
     }
 
-    private fun saveToLocalDatabase(data: MutableList<ImageVar>, context: Context) {
+    private fun saveToLocalDatabase(data: MutableList<ImageVar>) {
         Timber.d("Clearing DB and saving data on thread ${Thread.currentThread().name}")
-        AppDatabase.getDatabase(context).databaseDao().clearAndInsert(data)
+        database.databaseDao().clearAndInsert(data)
     }
 
     /** Extract the ImageVar list from InstagramMediaData response */
     private fun parseResponse(response: ApiResponseMedia?): Observable<MutableList<ImageVar>> {
-
         Timber.w("parsing list on thread: ${Thread.currentThread().name}")
         val time = System.currentTimeMillis()
 

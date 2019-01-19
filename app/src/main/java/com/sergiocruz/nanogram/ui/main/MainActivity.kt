@@ -10,10 +10,10 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.allPermissionsGranted
 import com.sergiocruz.nanogram.getRuntimePermissions
-import com.sergiocruz.nanogram.repository.Repository
 import com.sergiocruz.nanogram.util.TimberImplementation
 import com.sergiocruz.nanogram.util.deleteToken
 import com.sergiocruz.nanogram.util.hasSavedToken
@@ -78,9 +78,10 @@ class MainActivity : AppCompatActivity() {
         popupWindow.showAtLocation(container, Gravity.CENTER, 0, 0)
 
         if (hasSavedToken(this)) {
-            Repository.getUserInfo(this).observe(this, Observer {
-                popupView.status.append(getString(R.string.currently_logged) + " " + it.fullName)
-            })
+            ViewModelProviders.of(this).get(MainViewModel::class.java)
+                .getUserInfo().observe(this, Observer {
+                    popupView.status.append(getString(R.string.currently_logged) + " " + it.fullName)
+                })
         }
 
         popupView.logout.setOnClickListener {

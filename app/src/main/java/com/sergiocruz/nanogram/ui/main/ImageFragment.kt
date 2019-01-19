@@ -60,7 +60,7 @@ class ImageFragment : Fragment() {
 
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
 
-        setupViews(viewModel.getImageVarForIndex(listIndex, this.context!!))
+        setupViews(viewModel.getImageVarForIndex(listIndex))
         //setupViews(mockdata[listIndex])
 
     }

@@ -40,7 +40,7 @@ class DetailsViewPagerFragment : Fragment() {
 
     private fun getData(savedInstanceState: Bundle?) {
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
-        viewModel.getUserMedia(this.context!!).observe(this, Observer {
+        viewModel.getUserMedia().observe(this, Observer {
             manageIncomingData(it, savedInstanceState)
         })
     }
