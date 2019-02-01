@@ -86,13 +86,4 @@ dependencies {
 
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
-    // Directed Acyclic Graph DAG
-    implementation 'com.google.dagger:dagger:2.20'
-    kapt 'com.google.dagger:dagger-compiler:2.20'
-
-    def nav_version = "1.0.0-alpha09"
-
-    implementation "android.arch.navigation:navigation-fragment-ktx:$nav_version" // use -ktx for Kotlin
-    implementation "android.arch.navigation:navigation-ui-ktx:$nav_version" // use -ktx for Kotlin
-
 }
