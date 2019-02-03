@@ -5,8 +5,14 @@ To build this project and run the app properly, create a file in the root direct
 in this file add your instagram client ID and Client Secret along with the following settings:
 
 org.gradle.jvmargs=-Xmx1536m
+
 kotlin.code.style=official
+
 CLIENT_ID="your client id"
+
 CLIENT_SECRET="your client secret"
+
 android.useAndroidX=true
+
 android.enableJetifier=true
+
