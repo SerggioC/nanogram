@@ -5,8 +5,24 @@ import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import timber.log.Timber
+import android.bluetooth.BluetoothAdapter
+import androidx.core.app.ActivityCompat.startActivityForResult
+import android.content.Intent
 
 private const val PERMISSION_REQUESTS_CODE = 1
+private const val REQUEST_ENABLE_BT: Int = 1
+
+fun startBluetooth(activity: Activity) {
+    val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+    if (mBluetoothAdapter == null) {
+        // Device does not support Bluetooth
+    } else {
+        if (mBluetoothAdapter.isEnabled.not()) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(activity, enableBtIntent, REQUEST_ENABLE_BT, null)
+        }
+    }
+}
 
 /** Read and return manifest uses-permission fields */
 fun getRequiredPermissions(activity: Activity): Array<String?> {

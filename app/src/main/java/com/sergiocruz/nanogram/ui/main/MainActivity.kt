@@ -33,15 +33,32 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             TimberImplementation.init()
 
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.container, GridFragment())
-                .commitNow()
+            if (hasSavedToken(this)) {
+                goToGridFragment()
+            } else {
+                goToLoginFragment()
+            }
+
             if (!allPermissionsGranted(this)) getRuntimePermissions(this)
         } else {
             // Return here to prevent adding additional
             // Fragments when changing orientation.
             return
         }
+    }
+
+    private fun goToGridFragment() {
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.container, GridFragment())
+            .commit()
+    }
+
+    private fun goToLoginFragment() {
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.container, LoginFragment())
+            .commit()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -85,10 +102,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         popupView.logout.setOnClickListener {
+            popupWindow.dismiss()
             deleteToken(this)
-            finish()
+            goToLoginFragment()
         }
-
 
     }
 

@@ -39,8 +39,7 @@ import retrofit2.Response
 import timber.log.Timber
 
 class GridFragment : Fragment(),
-    GridImageAdapter.ImageClickListener,
-    AutenticationWebViewClient.RedirectCallback {
+    GridImageAdapter.ImageClickListener{
 
     private lateinit var viewModel: MainViewModel
     private lateinit var gridImageAdapter: GridImageAdapter
@@ -60,7 +59,7 @@ class GridFragment : Fragment(),
         if (hasSavedToken(this.context!!)) {
             initializeRecyclerView()
         } else {
-            loadInstagramWebView()
+            activity?.onBackPressed()
         }
 
         scrollToPosition()
@@ -136,89 +135,6 @@ class GridFragment : Fragment(),
         })
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
-    private fun getAuthWebView(): WebView {
-        val webView = WebView(this.context)
-        webView.isVerticalScrollBarEnabled = false
-        webView.isHorizontalScrollBarEnabled = false
-        webView.webViewClient = AutenticationWebViewClient(this)
-        webView.settings.javaScriptEnabled = true
-        webView.loadUrl(getInstagramUrl(this.context!!))
-        return webView
-    }
-
-    private lateinit var alertDialog: AlertDialog
-
-    private fun loadInstagramWebView() {
-        alertDialog = AlertDialog.Builder(this.context!!)
-            .setView(getAuthWebView())
-            .create()
-        // show software input keyboard for alert dialog
-        alertDialog.setOnShowListener {
-            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
-            alertDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-        }
-        alertDialog.setOnDismissListener {
-            // when onbackpressed and not authorized
-            if (!authorized) getOut()
-        }
-        alertDialog.show()
-    }
-
-    override fun onRedirect(result: RedirectResult) {
-        authorized = true
-        alertDialog.dismiss()
-        showProgress(false)
-
-        if (!result.code.isNullOrEmpty()) {
-            getAccessToken(result.code)
-        } else {
-            showToast(
-                this.context, "Error Authorizing! \n" +
-                        "${result.error} \n" +
-                        "${result.errorDescription} \n" +
-                        "${result.errorReason} \n" +
-                        "Try again",
-                ERROR
-            )
-            getOut()
-        }
-    }
-
-    private var authorized: Boolean = false
-
-    private fun getAccessToken(accessCode: String) {
-        Timber.i("accessCode is: $accessCode")
-
-        AppApiController.apiController
-            ?.getAccessCode(
-                BuildConfig.ClientId,
-                BuildConfig.ClientSecret,
-                "authorization_code",
-                getRedirectUri(this.context!!),
-                accessCode
-            )?.enqueue(object : Callback<Token> {
-                override fun onResponse(call: Call<Token>, response: Response<Token>) {
-                    if (response.isSuccessful) {
-                        val token = response.body()?.token
-                        Timber.i("response token= $token")
-                        Timber.i("getting user media")
-                        token?.let { saveToken(context!!, token) }
-                        initializeRecyclerView()
-                    } else {
-                        Timber.i(
-                            "Wrong response= $call ${response.errorBody()}"
-                        )
-                    }
-                }
-
-                override fun onFailure(call: Call<Token>, t: Throwable) {
-                    Timber.i("fail on api call $call")
-                }
-
-            })
-    }
-
     /** Shows the progress UI */
     private fun showProgress(show: Boolean) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
@@ -227,13 +143,13 @@ class GridFragment : Fragment(),
 
         val shortAnimTime =
             resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-        login_progress.visibility = if (show) View.VISIBLE else View.GONE
-        login_progress.animate()
+        loginProgress.visibility = if (show) View.VISIBLE else View.GONE
+        loginProgress.animate()
             .setDuration(shortAnimTime)
             .alpha((if (show) 1 else 0).toFloat())
             .setListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    login_progress.visibility = if (show) View.VISIBLE else View.GONE
+                    loginProgress.visibility = if (show) View.VISIBLE else View.GONE
                 }
             })
 
@@ -276,20 +192,17 @@ class GridFragment : Fragment(),
 
     override fun onImageClicked(adapterPosition: Int, view: View) {
         MainActivity.currentPosition = adapterPosition
-
+        Timber.i("onImage clicked: position: $adapterPosition")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            gotoImageDetailsTransition(adapterPosition, view)
+            gotoImageDetailsTransition(view)
         } else {
-            gotoImageDetails(adapterPosition)
+            gotoImageDetails()
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun gotoImageDetailsTransition(index: Int, view: View) {
-
+    private fun gotoImageDetailsTransition(view: View) {
         (exitTransition as TransitionSet).excludeTarget(view, true)
-
-        Timber.i("onImage clicked: position: $index")
 
         fragmentManager
             ?.beginTransaction()
@@ -304,16 +217,12 @@ class GridFragment : Fragment(),
             ?.commit()
     }
 
-    private fun gotoImageDetails(index: Int) {
+    private fun gotoImageDetails() {
         fragmentManager
             ?.beginTransaction()
             ?.replace(R.id.container, DetailsViewPagerFragment())
             ?.addToBackStack(null)
             ?.commit()
-    }
-
-    private fun getOut() {
-        activity?.finish()
     }
 
 }
