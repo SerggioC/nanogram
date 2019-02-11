@@ -14,11 +14,11 @@ import androidx.lifecycle.ViewModelProviders
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.allPermissionsGranted
 import com.sergiocruz.nanogram.getRuntimePermissions
-import com.sergiocruz.nanogram.util.TimberImplementation
 import com.sergiocruz.nanogram.util.deleteToken
 import com.sergiocruz.nanogram.util.hasSavedToken
 import kotlinx.android.synthetic.main.main_activity.*
 import kotlinx.android.synthetic.main.popup_window_settings.view.*
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,8 +31,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.main_activity)
 
         if (savedInstanceState == null) {
-            TimberImplementation.init()
-
             if (hasSavedToken(this)) {
                 goToGridFragment()
             } else {

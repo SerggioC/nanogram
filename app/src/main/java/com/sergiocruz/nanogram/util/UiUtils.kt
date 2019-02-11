@@ -21,7 +21,12 @@ enum class InfoLevel {
 }
 
 //fun showCustomToast(context: Context, toastText: String, icon_RID: Int, text_color_Res_Id: Int, duration: Int? = Toast.LENGTH_LONG) {
-fun showToast(context: Context?, toastText: String, level: InfoLevel = INFO, duration: Int = Toast.LENGTH_LONG) {
+fun showToast(
+    context: Context?,
+    toastText: String,
+    level: InfoLevel = INFO,
+    duration: Int = Toast.LENGTH_LONG
+) {
     val inflater = context?.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
     if (inflater == null) {
         Toast.makeText(context, toastText, duration).show()
@@ -59,6 +64,14 @@ fun slideItemsFromBottom(viewToAnimate: View, timeOffSet: Long) {
     )
     bottomAnimation.startOffset = timeOffSet
     viewToAnimate.startAnimation(bottomAnimation)
+}
+
+fun zoomInViewAnimation(viewToAnimate: View) {
+    val animation = AnimationUtils.loadAnimation(
+        viewToAnimate.context,
+        R.anim.item_animation_zoom_in_fade_out
+    )
+    viewToAnimate.startAnimation(animation)
 }
 
 

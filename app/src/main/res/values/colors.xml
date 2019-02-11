@@ -2,12 +2,12 @@
 <resources>
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorAccent">#1E88E5</color>
     <color name="white">#ffffff</color>
     <color name="shadow_color">#25424242</color>
     <color name="blue">#00a6ff</color>
-    <color name="green">#01d41d</color>
+    <color name="ok_green">#26BD3B</color>
     <color name="orange">#00a6ff</color>
-    <color name="red">#00a6ff</color>
+    <color name="fail_red">#FF0048</color>
     <color name="black">#000000</color>
 </resources>

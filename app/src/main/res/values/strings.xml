@@ -23,4 +23,7 @@
     <string name="applications_settings">Application Settings</string>
     <string name="logout">Logout from Instagram</string>
     <string name="currently_logged">You are currently logged in as</string>
+    <string name="login">Login</string>
+    <string name="loading">Loading…</string>
+    <string name="login_ok">Login OK!</string>
 </resources>

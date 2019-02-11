@@ -143,13 +143,13 @@ class GridFragment : Fragment(),
 
         val shortAnimTime =
             resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-        loginProgress.visibility = if (show) View.VISIBLE else View.GONE
-        loginProgress.animate()
-            .setDuration(shortAnimTime)
-            .alpha((if (show) 1 else 0).toFloat())
-            .setListener(object : AnimatorListenerAdapter() {
+        loginProgress?.visibility = if (show) View.VISIBLE else View.GONE
+        loginProgress?.animate()
+            ?.setDuration(shortAnimTime)
+            ?.alpha((if (show) 1 else 0).toFloat())
+            ?.setListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    loginProgress.visibility = if (show) View.VISIBLE else View.GONE
+                    loginProgress?.visibility = if (show) View.VISIBLE else View.GONE
                 }
             })
 
