@@ -30,6 +30,7 @@ import kotlin.random.Random
 
 class GridImageAdapter(
     private val imageClickListener: ImageClickListener,
+    private val imageLongClickListener: ImageLongClickListener,
     private val gridFragment: Fragment,
     private val imageWidth: Int,
     private val requestManager: RequestManager = Glide.with(gridFragment.context!!),
@@ -62,8 +63,6 @@ class GridImageAdapter(
 
         return viewHolder
     }
-
-
 
     override fun getItemId(position: Int) = position.toLong()
 
@@ -127,20 +126,29 @@ class GridImageAdapter(
         fun onImageClicked(adapterPosition: Int, view: View)
     }
 
-    inner class ItemImageViewHolder(itemView: View) :
-        RecyclerView.ViewHolder(itemView), View.OnClickListener {
+    interface ImageLongClickListener {
+        fun onImageLongClicked(imageUrl: String?)
+    }
 
+    inner class ItemImageViewHolder(itemView: View) :
+        RecyclerView.ViewHolder(itemView), View.OnClickListener, View.OnLongClickListener {
         internal val imageView: ImageView = itemView.item_image
+
         internal val caption: TextView = itemView.caption
         internal val likes: TextView = itemView.likes
         internal val comments: TextView = itemView.comments
-
         init {
             imageView.setOnClickListener(this)
+            imageView.setOnLongClickListener(this)
         }
 
         override fun onClick(view: View) {
             imageClickListener.onImageClicked(adapterPosition, view)
+        }
+
+        override fun onLongClick(view: View): Boolean {
+            imageLongClickListener.onImageLongClicked(imageList?.get(adapterPosition)?.images?.standardResolution?.url)
+            return true
         }
     }
 

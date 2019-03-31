@@ -2,17 +2,19 @@ package com.sergiocruz.nanogram.ui.main
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
-import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Activity.RESULT_OK
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.content.ContentValues
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
-import android.webkit.WebView
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
 import androidx.core.app.SharedElementCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -21,26 +23,19 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager.VERTICAL
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionSet
-import com.sergiocruz.nanogram.BuildConfig
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.adapter.GridImageAdapter
-import com.sergiocruz.nanogram.model.RedirectResult
-import com.sergiocruz.nanogram.model.Token
-import com.sergiocruz.nanogram.retrofit.AppApiController
-import com.sergiocruz.nanogram.service.getInstagramUrl
-import com.sergiocruz.nanogram.service.getRedirectUri
-import com.sergiocruz.nanogram.util.*
-import com.sergiocruz.nanogram.util.InfoLevel.ERROR
+import com.sergiocruz.nanogram.ui.BluetoothShare
+import com.sergiocruz.nanogram.util.exitFullScreen
+import com.sergiocruz.nanogram.util.getImageWidth
+import com.sergiocruz.nanogram.util.hasSavedToken
 import kotlinx.android.synthetic.main.grid_fragment.*
 import kotlinx.android.synthetic.main.item_image_layout.view.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import timber.log.Timber
+import java.io.File
 
 class GridFragment : Fragment(),
-    GridImageAdapter.ImageClickListener{
-
+    GridImageAdapter.ImageClickListener, GridImageAdapter.ImageLongClickListener {
     private lateinit var viewModel: MainViewModel
     private lateinit var gridImageAdapter: GridImageAdapter
 
@@ -56,7 +51,7 @@ class GridFragment : Fragment(),
         super.onViewCreated(view, savedInstanceState)
 
         showProgress(true)
-        if (hasSavedToken(this.context!!)) {
+        if (hasSavedToken(context)) {
             initializeRecyclerView()
         } else {
             activity?.onBackPressed()
@@ -78,7 +73,7 @@ class GridFragment : Fragment(),
         images_recyclerview?.setHasFixedSize(false)
         //images_recyclerview?.addItemDecoration(MyItemDecoration(1))
 
-        gridImageAdapter = GridImageAdapter(this, this, getImageWidth(this.activity as Activity))
+        gridImageAdapter = GridImageAdapter(this, this, this, getImageWidth(activity as Activity))
         gridImageAdapter.setHasStableIds(true)
         images_recyclerview?.adapter = gridImageAdapter
 
@@ -89,13 +84,18 @@ class GridFragment : Fragment(),
     private fun initializeViewModel() {
         viewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
         viewModel.getUserMedia().observe(this, Observer {
-            gridImageAdapter.swap(it)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                prepareExitTransitions()
-                postponeEnterTransition()
+            if (it == null) {
+                noNetworkImageView.visibility = View.VISIBLE
+            } else {
+                gridImageAdapter.swap(it)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    prepareExitTransitions()
+                    postponeEnterTransition()
+                }
+                showProgress(false)
+                scrollToPosition()
             }
-            showProgress(false)
-            scrollToPosition()
+
         })
     }
 
@@ -175,7 +175,7 @@ class GridFragment : Fragment(),
                     // Locate the ViewHolder for the clicked position.
                     val selectedViewHolder =
                         images_recyclerview?.findViewHolderForAdapterPosition(MainActivity.currentPosition)
-                    if (selectedViewHolder == null) return
+                    if (selectedViewHolder ==  null) return
 
 
 //                val imageVar = viewModel.getImageVarForIndex(MainActivity.currentPosition, context!!)
@@ -198,6 +198,71 @@ class GridFragment : Fragment(),
         } else {
             gotoImageDetails()
         }
+    }
+
+    override fun onImageLongClicked(imageUrl: String?) {
+        imageUrl?.let { startBluetoothAndSend(activity, it) }
+    }
+
+    /** Ask user to enable Bluetooth
+     * Put extra bundle in the Intent with data to receive onActivityResult */
+    private fun startBluetoothAndSend(activity: Activity?, imageUrl: String?) {
+        if (activity == null) return
+        val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        if (mBluetoothAdapter == null) {
+            // Device does not support Bluetooth
+            return
+        } else {
+            if (mBluetoothAdapter.isEnabled.not()) {
+                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                enableBtIntent.putExtra("URL", imageUrl)
+                val bundle = Bundle()
+                bundle.putString("URL", imageUrl)
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT, bundle)
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_ENABLE_BT) {
+            if (resultCode == RESULT_OK) {
+                //BT activated by user
+                sendViaBluetooth(data?.getStringExtra("URL"))
+            }
+        } else {
+            //nothing
+        }
+    }
+
+    private fun sendViaBluetooth(imageUrl: String?) {
+        if (imageUrl == null) return
+
+        val values = ContentValues()
+        val btDevice: BluetoothDevice? = getDeviceList()
+        val address = btDevice?.address
+
+        //values.put(BluetoothShare.URI, Uri.fromFile(File("somefile.mp3")).toString())
+        values.put(BluetoothShare.URI, imageUrl)
+        values.put(BluetoothShare.DESTINATION, address)
+        values.put(BluetoothShare.DIRECTION, BluetoothShare.DIRECTION_OUTBOUND)
+        val timeStamp = System.currentTimeMillis()
+        values.put(BluetoothShare.TIMESTAMP, timeStamp)
+        val contentUri = activity?.contentResolver?.insert(BluetoothShare.CONTENT_URI, values)
+
+    }
+
+    private fun getDeviceList(): BluetoothDevice? {
+        val mBlurAdapter = BluetoothAdapter.getDefaultAdapter()
+        val pairedDevices: MutableSet<BluetoothDevice> = mBlurAdapter.bondedDevices
+        if (pairedDevices.isEmpty()) {
+            Timber.e("No paired devices found")
+            return null
+        }
+        for (pairedDevice in pairedDevices) {
+            Timber.d("DeviceActivity Device : address : ${pairedDevice.address} name :${pairedDevice.name}")
+        }
+        return pairedDevices.first()
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -223,6 +288,10 @@ class GridFragment : Fragment(),
             ?.replace(R.id.container, DetailsViewPagerFragment())
             ?.addToBackStack(null)
             ?.commit()
+    }
+
+    companion object {
+        private const val REQUEST_ENABLE_BT: Int = 1
     }
 
 }

@@ -8,10 +8,9 @@ import android.webkit.CookieManager
 import android.webkit.CookieSyncManager
 import com.sergiocruz.nanogram.R
 
-
-fun hasSavedToken(context: Context): Boolean {
+fun hasSavedToken(context: Context?): Boolean {
     val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context)
-    return sharedPrefs.contains(context.getString(R.string.user_token))
+    return sharedPrefs.contains(context?.getString(R.string.user_token))
 }
 
 fun getSavedToken(context: Context): String {
@@ -42,8 +41,8 @@ fun clearCookies(context: Context) {
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
         val cookieSyncMngr = CookieSyncManager.createInstance(context)
-        cookieSyncMngr.startSync()
         val cookieManager = CookieManager.getInstance()
+        cookieSyncMngr.startSync()
         cookieManager.removeAllCookie()
         cookieManager.removeSessionCookie()
         cookieSyncMngr.stopSync()

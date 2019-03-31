@@ -1,5 +1,7 @@
 package com.sergiocruz.nanogram.ui.main
 
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,7 +15,6 @@ import androidx.fragment.app.Fragment
 import com.sergiocruz.nanogram.BuildConfig
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.model.RedirectResult
-import com.sergiocruz.nanogram.model.Token
 import com.sergiocruz.nanogram.retrofit.AppApiController
 import com.sergiocruz.nanogram.service.getInstagramUrl
 import com.sergiocruz.nanogram.service.getRedirectUri
@@ -22,16 +23,21 @@ import com.sergiocruz.nanogram.util.saveToken
 import com.sergiocruz.nanogram.util.showToast
 import com.sergiocruz.nanogram.util.zoomInViewAnimation
 import kotlinx.android.synthetic.main.login_fragment.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.*
 import timber.log.Timber
-import android.animation.ValueAnimator
-import android.animation.ArgbEvaluator
 
 
 class LoginFragment : Fragment(),
     AutenticationWebViewClient.RedirectCallback {
+
+    private val coroutinesJob: Job by lazy { SupervisorJob() }
+    private val coroutine by lazy { CoroutineScope(Dispatchers.IO + coroutinesJob) }
+    private val mainScope by lazy { CoroutineScope(Dispatchers.Main + coroutinesJob) }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        coroutinesJob.cancel()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -71,7 +77,12 @@ class LoginFragment : Fragment(),
     private fun showButtonReset() {
         loginButton.isEnabled = true
         loginButton.setText(R.string.login)
-        loginButton.setBackgroundColor(ContextCompat.getColor(loginButton.context, R.color.colorAccent))
+        loginButton.setBackgroundColor(
+            ContextCompat.getColor(
+                loginButton.context,
+                R.color.colorAccent
+            )
+        )
     }
 
     private fun showButtonFailAnim() {
@@ -80,7 +91,7 @@ class LoginFragment : Fragment(),
         startColorAnimation(loginButton)
     }
 
-    fun startColorAnimation(view: View) {
+    private fun startColorAnimation(view: View) {
         val fromColor = ContextCompat.getColor(view.context, R.color.fail_red)
         val toColor = ContextCompat.getColor(view.context, R.color.colorAccent)
         val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), fromColor, toColor)
@@ -92,7 +103,12 @@ class LoginFragment : Fragment(),
     private fun showButtonSuccess() {
         loginButton.isEnabled = false
         loginButton.setText(R.string.login_ok)
-        loginButton.setBackgroundColor(ContextCompat.getColor(loginButton.context, R.color.ok_green))
+        loginButton.setBackgroundColor(
+            ContextCompat.getColor(
+                loginButton.context,
+                R.color.ok_green
+            )
+        )
         zoomInViewAnimation(loginButton)
     }
 
@@ -135,12 +151,14 @@ class LoginFragment : Fragment(),
         alertDialog.show()
     }
 
+    private var authorized: Boolean = false
+
     override fun onRedirect(result: RedirectResult) {
         authorized = true
         alertDialog.dismiss()
 
-        if (!result.code.isNullOrEmpty()) {
-            getAccessToken(result.code)
+        if (result.code.isNullOrEmpty().not()) {
+            getAccessTokenWithCoroutines(result.code)
         } else {
             showToast(
                 context, "Error Authorizing! \n" +
@@ -153,42 +171,52 @@ class LoginFragment : Fragment(),
         }
     }
 
-    private var authorized: Boolean = false
 
-    private fun getAccessToken(accessCode: String) {
+    private fun getAccessTokenWithCoroutines(accessCode: String?) {
         Timber.i("accessCode is: $accessCode")
 
-        AppApiController.apiController
-            ?.getAccessCode(
-                BuildConfig.ClientId,
-                BuildConfig.ClientSecret,
-                "authorization_code",
-                getRedirectUri(this.context!!),
-                accessCode
-            )?.enqueue(object : Callback<Token> {
-                override fun onResponse(call: Call<Token>, response: Response<Token>) {
-                    if (response.isSuccessful) {
-                        val token = response.body()?.token
-                        Timber.i("response token= $token")
-                        Timber.i("getting user media")
-                        token?.let {
+        coroutine.launch {
+            try {
+                val response = AppApiController.instagramLazyAPI
+                    .getAccessCodeAsync(
+                        BuildConfig.ClientId,
+                        BuildConfig.ClientSecret,
+                        "authorization_code",
+                        getRedirectUri(context!!),
+                        accessCode
+                    ).await()
+
+                if (response.isSuccessful) {
+                    val token = response.body()?.token
+                    Timber.i("response token= $token")
+                    Timber.i("getting user media")
+                    token?.let {
+                        mainScope.launch {
                             setLoginButtonStatus(LoginStatus.Success)
-                            saveToken(context!!, token)
+                            goToGridFragment()
                         }
-                        goToGridFragment()
-                    } else {
-                        Timber.e("Wrong response= $call ${response.errorBody()}")
+                        saveToken(context!!, token)
+                    }
+                } else {
+                    Timber.e("Wrong response: ${response.errorBody()}")
+                    mainScope.launch {
                         setLoginButtonStatus(LoginStatus.Failed)
                     }
                 }
 
-                override fun onFailure(call: Call<Token>, t: Throwable) {
-                    Timber.e("fail on api call $call")
+            } catch (e: Exception) {
+                Timber.e("Some unexpected error happened: $e")
+                mainScope.launch {
                     setLoginButtonStatus(LoginStatus.Failed)
                 }
+            }
 
-            })
+
+        }
+
     }
+
+
 //
 //    /** Shows the progress UI */
 //    private fun showProgress(show: Boolean) {

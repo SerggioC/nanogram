@@ -11,6 +11,7 @@ import android.widget.PopupWindow
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import com.sergiocruz.nanogram.App
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.allPermissionsGranted
 import com.sergiocruz.nanogram.getRuntimePermissions
@@ -18,9 +19,13 @@ import com.sergiocruz.nanogram.util.deleteToken
 import com.sergiocruz.nanogram.util.hasSavedToken
 import kotlinx.android.synthetic.main.main_activity.*
 import kotlinx.android.synthetic.main.popup_window_settings.view.*
+import javax.inject.Inject
 
 
 class MainActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var appe: App
 
     companion object {
         var currentPosition: Int = 0

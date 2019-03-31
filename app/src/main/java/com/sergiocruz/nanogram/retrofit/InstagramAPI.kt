@@ -4,8 +4,8 @@ import com.sergiocruz.nanogram.model.Token
 import com.sergiocruz.nanogram.model.endpoint.comments.InstagramApiResponseComments
 import com.sergiocruz.nanogram.model.endpoint.usermedia.ApiResponseMedia
 import com.sergiocruz.nanogram.model.endpoint.userself.InstagramApiResponseSelf
-import io.reactivex.Observable
-import retrofit2.Call
+import kotlinx.coroutines.Deferred
+import retrofit2.Response
 import retrofit2.http.*
 
 /**
@@ -44,33 +44,33 @@ interface InstagramAPI {
      */
     @POST("https://api.instagram.com/oauth/access_token")
     @FormUrlEncoded
-    fun getAccessCode(
+    fun getAccessCodeAsync(
         @Field("client_id") clientId: String,
         @Field("client_secret") clientSecret: String,
         @Field("grant_type") grantType: String,
         @Field("redirect_uri") redirectUri: String,
-        @Field("code") code: String
-    ): Call<Token>
+        @Field("code") code: String?
+    ): Deferred<Response<Token>>
 
     /** query appended to url with ?access_token=token */
     @GET("https://api.instagram.com/v1/users/self/")
-    fun getUserInfo(@Query("access_token") token: String): Observable<InstagramApiResponseSelf>
+    fun getUserInfoAsync(@Query("access_token") token: String): Deferred<Response<InstagramApiResponseSelf>>
 
     @GET("https://api.instagram.com/v1/users/self/media/recent/")
-    fun getUserMedia(@Query("access_token") token: String): Observable<ApiResponseMedia>
+    fun getUserMediaAsync(@Query("access_token") token: String): Deferred<Response<ApiResponseMedia>>
 
     @GET("{api_root_url}users/self/media/recent/")
-    fun getUserMedia1(
+    fun getUserMedia1Async(
         @Path("api_root_url") root: String,
         @Query("access_token") token: String
-    ): Call<ApiResponseMedia>
+    ): Deferred<Response<ApiResponseMedia>>
 
     @GET("{api_root_url}media/{media-id}/comments")
-    fun getCommentsForMediaId(
+    fun getCommentsForMediaIdAsync(
         @Path("api_root_url") root: String,
         @Path("media-id") mediaId: String,
         @Query("access_token") token: String
-    ): Observable<InstagramApiResponseComments>
+    ): Deferred<Response<InstagramApiResponseComments>>
 
 
 }
