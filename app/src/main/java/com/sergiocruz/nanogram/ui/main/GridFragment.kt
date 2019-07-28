@@ -26,11 +26,15 @@ import androidx.transition.TransitionSet
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.adapter.GridImageAdapter
 import com.sergiocruz.nanogram.ui.BluetoothShare
+import com.sergiocruz.nanogram.ui.goodsnack.GoodSnackbar
 import com.sergiocruz.nanogram.util.exitFullScreen
 import com.sergiocruz.nanogram.util.getImageWidth
 import com.sergiocruz.nanogram.util.hasSavedToken
 import kotlinx.android.synthetic.main.grid_fragment.*
 import kotlinx.android.synthetic.main.item_image_layout.view.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
 

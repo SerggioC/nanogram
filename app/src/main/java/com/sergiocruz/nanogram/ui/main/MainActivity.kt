@@ -8,15 +8,19 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.LinearLayout
 import android.widget.PopupWindow
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import com.google.android.material.snackbar.Snackbar
 import com.sergiocruz.nanogram.App
 import com.sergiocruz.nanogram.R
 import com.sergiocruz.nanogram.allPermissionsGranted
 import com.sergiocruz.nanogram.getRuntimePermissions
+import com.sergiocruz.nanogram.ui.goodsnack.GoodSnackbar
 import com.sergiocruz.nanogram.util.deleteToken
 import com.sergiocruz.nanogram.util.hasSavedToken
+import kotlinx.android.synthetic.main.grid_fragment.*
 import kotlinx.android.synthetic.main.main_activity.*
 import kotlinx.android.synthetic.main.popup_window_settings.view.*
 import javax.inject.Inject
@@ -70,14 +74,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        if (item?.itemId == R.id.action_settings) openSettingsPopup()
+        when (item?.itemId) {
+            R.id.action_settings -> openSettingsPopup()
+            R.id.action_snack -> showSnack()
+        }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun showSnack() {
+        GoodSnackbar.make(images_recyclerview, Snackbar.LENGTH_INDEFINITE) {
+            Toast.makeText(this, "cenas", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun openSettingsPopup() {
         // inflate the layout of the popup window
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        val popupView = inflater.inflate(R.layout.popup_window_settings, null)
+        val popupView = inflater.inflate(R.layout.popup_window_settings, null, true)
+
 
         // create the popup window
         val width = LinearLayout.LayoutParams.WRAP_CONTENT

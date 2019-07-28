@@ -17,7 +17,20 @@ class ImageVarLiveData(private val userToken: String, var database: AppDatabase)
     private val coroutine by lazy { CoroutineScope(Dispatchers.IO + coroutineJob) }
 
     init {
+
+
         coroutine.launch {
+
+            val result = withTimeoutOrNull(2900L) {
+                repeat(1000) { i ->
+                    println("I'm sleeping $i ...")
+                    delay(500L)
+                }
+                "Done" // will get cancelled before it produces this result
+            }
+
+            println("Result is $result")
+
             try {
                 val asyncResponse = AppApiController
                     .instagramLazyAPI

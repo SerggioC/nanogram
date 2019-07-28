@@ -3,8 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_snack"
+        android:icon="@drawable/ic_heart"
+        android:title="@string/applications_settings"
+        app:showAsAction="always"/>
+
+    <item
         android:id="@+id/action_settings"
         android:icon="@drawable/ic_gears"
         android:title="@string/applications_settings"
         app:showAsAction="always"/>
+
+
 </menu>
